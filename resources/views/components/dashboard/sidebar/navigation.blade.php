@@ -26,8 +26,8 @@
         
         @if($user->role === 'admin' || $user->role === 'hr' || $user->role === 'manager')
         <!-- Payroll -->
-        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
-            <i class="fas fa-money-bill-wave mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
+        <a href="{{ route('payroll.index') }}" class="flex items-center px-4 py-3 text-sm font-medium {{ $activeRoute === 'payroll.index' ? 'text-blue-600 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600' }} rounded-lg transition-all duration-200 group">
+            <i class="fas fa-money-bill-wave mr-3 text-lg {{ $activeRoute === 'payroll.index' ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600' }}"></i>
             <span>Payroll</span>
             <span class="ml-auto bg-green-100 text-green-600 text-xs px-2 py-1 rounded-full">New</span>
         </a>

@@ -33,7 +33,19 @@ class PayrollController extends Controller
         $payrolls = $query->orderBy('pay_period_start', 'desc')->paginate(15);
         $employees = Employee::all();
 
-        return view('payrolls.index', compact('payrolls', 'employees'));
+        // Calculate summary statistics
+        $allPayrolls = $query->get();
+        $summary = [
+            'total_employees' => Employee::count(),
+            'gross_pay' => $allPayrolls->sum('gross_pay'),
+            'total_deductions' => $allPayrolls->sum('deductions'),
+            'net_pay' => $allPayrolls->sum('net_pay'),
+            'pending_count' => $allPayrolls->where('status', 'pending')->count(),
+            'approved_count' => $allPayrolls->where('status', 'approved')->count(),
+            'paid_count' => $allPayrolls->where('status', 'paid')->count(),
+        ];
+
+        return view('payroll.index', compact('payrolls', 'employees', 'summary'));
     }
 
     public function create()

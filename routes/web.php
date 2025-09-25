@@ -45,6 +45,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/payrolls/reports/summary', [PayrollController::class, 'summary'])->name('payrolls.summary');
     Route::get('/payrolls/reports/monthly', [PayrollController::class, 'monthlyReport'])->name('payrolls.monthly');
     
+    // Payroll route aliases for consistency
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::get('/payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
+    
     // Attendance routes
     Route::prefix('attendance')->name('attendance.')->group(function () {
         // Time In/Out routes
