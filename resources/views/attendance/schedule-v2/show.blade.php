@@ -14,11 +14,11 @@
                         <p class="mt-1 text-sm text-gray-600">View employee schedule information</p>
                     </div>
                     <div class="flex space-x-3">
-                        <a href="{{ isset($currentFilters) ? route('schedule.edit', array_merge(['schedule' => $schedule], array_filter($currentFilters))) : route('schedule.edit', $schedule) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <a href="{{ isset($currentFilters) ? route('schedule-v2.edit', array_merge(['schedule' => $schedule], array_filter($currentFilters))) : route('schedule-v2.edit', $schedule) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-edit mr-2"></i>
                             Edit Schedule
                         </a>
-                        <a href="{{ isset($currentFilters) ? route('schedule.index', array_filter($currentFilters)) : route('schedule.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <a href="{{ isset($currentFilters) ? route('schedule-v2.index', array_filter($currentFilters)) : route('schedule-v2.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-arrow-left mr-2"></i>
                             Back to Schedules
                         </a>
@@ -120,12 +120,12 @@
                         <h3 class="text-lg font-medium text-gray-900">Actions</h3>
                     </div>
                     <div class="p-6 space-y-3">
-                        <a href="{{ route('schedule.edit', $schedule) }}" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <a href="{{ route('schedule-v2.edit', $schedule) }}" class="w-full inline-flex items-center justify-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-edit mr-2"></i>
                             Edit Schedule
                         </a>
                         
-                        <form action="{{ route('schedule.destroy', $schedule) }}" method="POST" class="w-full">
+                        <form action="{{ route('schedule-v2.destroy', $schedule) }}" method="POST" class="w-full">
                             @csrf
                             @method('DELETE')
                             <button type="submit" onclick="return confirm('Are you sure you want to delete this schedule?')" class="w-full inline-flex items-center justify-center px-4 py-2 bg-red-600 border border-transparent rounded-lg font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors">

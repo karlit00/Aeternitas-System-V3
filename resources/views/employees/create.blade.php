@@ -62,6 +62,17 @@
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                             @enderror
                         </div>
+                        
+                        <div>
+                            <label for="employee_id" class="block text-sm font-medium text-gray-700 mb-2">Employee ID</label>
+                            <input type="text" name="employee_id" id="employee_id" value="{{ old('employee_id') }}" 
+                                placeholder="e.g., EMP-0001 or leave blank for auto-generation"
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('employee_id') border-red-500 @enderror">
+                            <p class="mt-1 text-xs text-gray-500">Leave blank to auto-generate (EMP-XXXX format)</p>
+                            @error('employee_id')
+                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                            @enderror
+                        </div>
                     </div>
                 </div>
 

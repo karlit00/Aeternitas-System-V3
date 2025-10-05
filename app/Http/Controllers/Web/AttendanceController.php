@@ -406,6 +406,148 @@ public function schedule(Request $request)
     }
 
     /**
+     * Show the import DTR page
+     */
+    public function importDtr()
+    {
+        $user = Auth::user();
+        return view('attendance.import-dtr', compact('user'));
+    }
+
+    /**
+     * Process the imported DTR file
+     */
+    public function processImportDtr(Request $request)
+    {
+        $request->validate([
+            'dtr_file' => 'required|file|mimes:xlsx,xls,csv|max:10240', // 10MB max
+        ]);
+
+        try {
+            $file = $request->file('dtr_file');
+            
+            // Create a unique filename
+            $fileName = 'dtr_' . time() . '_' . $file->getClientOriginalName();
+            $tempPath = storage_path('app' . DIRECTORY_SEPARATOR . 'temp' . DIRECTORY_SEPARATOR . $fileName);
+            
+            // Move the uploaded file to temp directory
+            $file->move(storage_path('app' . DIRECTORY_SEPARATOR . 'temp'), $fileName);
+            
+            // Debug: Log the file path
+            \Log::info('DTR File Path: ' . $tempPath);
+            \Log::info('File exists: ' . (file_exists($tempPath) ? 'Yes' : 'No'));
+            
+            // Check if file exists
+            if (!file_exists($tempPath)) {
+                throw new \Exception('Uploaded file not found at: ' . $tempPath);
+            }
+            
+            $fullPath = $tempPath;
+            
+            // Parse the DTR data
+            $dtrService = new \App\Services\DtrImportService();
+            $parsedData = $dtrService->parseDtrData($fullPath);
+            
+            // Debug: Log parsed data
+            \Log::info('Parsed Data Count: ' . $parsedData->count());
+            \Log::info('Parsed Data: ' . json_encode($parsedData->toArray()));
+            
+            // Validate the parsed data
+            $validation = $dtrService->validateParsedData($parsedData);
+            
+            // Store data in session for review
+            session([
+                'dtr_import_data' => $parsedData->toArray(),
+                'dtr_import_validation' => $validation,
+                'dtr_import_file' => $file->getClientOriginalName()
+            ]);
+            
+            return redirect()->route('attendance.import-dtr.review');
+            
+        } catch (\Exception $e) {
+            \Log::error('DTR Processing Error: ' . $e->getMessage());
+            return redirect()->back()
+                ->with('error', 'Failed to process DTR file: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
+    /**
+     * Show the DTR import review page
+     */
+    public function reviewImportDtr()
+    {
+        $user = Auth::user();
+        $parsedDataArray = session('dtr_import_data', []);
+        $parsedData = collect($parsedDataArray);
+        $validation = session('dtr_import_validation', ['errors' => collect(), 'warnings' => collect(), 'is_valid' => false]);
+        $fileName = session('dtr_import_file', 'Unknown file');
+        
+        if (empty($parsedDataArray) || $parsedData->isEmpty()) {
+            return redirect()->route('attendance.import-dtr')
+                ->with('error', 'No import data found. Please upload a file first.');
+        }
+        
+        return view('attendance.import-dtr-review', compact('user', 'parsedData', 'validation', 'fileName'));
+    }
+
+    /**
+     * Confirm and import the DTR data
+     */
+    public function confirmImportDtr(Request $request)
+    {
+        $parsedDataArray = session('dtr_import_data', []);
+        $parsedData = collect($parsedDataArray);
+        $validation = session('dtr_import_validation', ['errors' => collect(), 'warnings' => collect(), 'is_valid' => false]);
+        
+        if (empty($parsedDataArray) || $parsedData->isEmpty()) {
+            return redirect()->route('attendance.import-dtr')
+                ->with('error', 'No import data found. Please upload a file first.');
+        }
+        
+        if (!$validation['is_valid']) {
+            return redirect()->route('attendance.import-dtr.review')
+                ->with('error', 'Cannot import data with validation errors. Please fix the issues first.');
+        }
+        
+        try {
+            $importedCount = 0;
+            $errors = collect();
+            
+            foreach ($parsedData as $record) {
+                $employee = \App\Models\Employee::where('employee_id', $record['employee_id'])->first();
+                
+                if (!$employee) {
+                    $errors->push("Employee ID '{$record['employee_id']}' not found");
+                    continue;
+                }
+                
+                // Create attendance record
+                \App\Models\AttendanceRecord::create([
+                    'employee_id' => $employee->id,
+                    'date' => $record['date'],
+                    'time_in' => $record['time_in'],
+                    'time_out' => $record['time_out'],
+                    'total_hours' => $record['total_hours'],
+                    'status' => $record['status'],
+                ]);
+                
+                $importedCount++;
+            }
+            
+            // Clear session data
+            session()->forget(['dtr_import_data', 'dtr_import_validation', 'dtr_import_file']);
+            
+            return redirect()->route('attendance.timekeeping')
+                ->with('success', "Successfully imported {$importedCount} attendance records.");
+                
+        } catch (\Exception $e) {
+            return redirect()->route('attendance.import-dtr.review')
+                ->with('error', 'Failed to import data: ' . $e->getMessage());
+        }
+    }
+
+    /**
      * Log attendance action for audit trail
      */
     private function logAttendanceAction($attendanceRecord, $action, $description = null)

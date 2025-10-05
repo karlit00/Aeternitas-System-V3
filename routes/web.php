@@ -49,7 +49,22 @@ Route::middleware('auth')->group(function () {
         Route::put('/{schedule}', [App\Http\Controllers\Web\ScheduleController::class, 'update'])->name('update');
         Route::delete('/{schedule}', [App\Http\Controllers\Web\ScheduleController::class, 'destroy'])->name('destroy');
         Route::post('/bulk-create', [App\Http\Controllers\Web\ScheduleController::class, 'bulkCreate'])->name('bulk-create');
+        Route::delete('/bulk-delete', [App\Http\Controllers\Web\ScheduleController::class, 'bulkDelete'])->name('bulk-delete');
         Route::get('/statistics', [App\Http\Controllers\Web\ScheduleController::class, 'getStatistics'])->name('statistics');
+    });
+    
+    // Schedule Management V2 routes
+    Route::prefix('schedule-v2')->name('schedule-v2.')->group(function () {
+        Route::get('/', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'index'])->name('index');
+        Route::get('/create', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'create'])->name('create');
+        Route::post('/', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'store'])->name('store');
+        Route::get('/{schedule}', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'show'])->name('show');
+        Route::get('/{schedule}/edit', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'edit'])->name('edit');
+        Route::put('/{schedule}', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'update'])->name('update');
+        Route::delete('/{schedule}', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'destroy'])->name('destroy');
+        Route::post('/bulk-create', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'bulkCreate'])->name('bulk-create');
+        Route::delete('/bulk-delete', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'bulkDelete'])->name('bulk-delete');
+        Route::get('/statistics', [App\Http\Controllers\Web\ScheduleV2Controller::class, 'getStatistics'])->name('statistics');
     });
     
     // Payroll routes
@@ -89,6 +104,12 @@ Route::middleware('auth')->group(function () {
         Route::get('/daily', [App\Http\Controllers\Web\AttendanceController::class, 'daily'])->name('daily');
         Route::get('/timekeeping', [App\Http\Controllers\Web\AttendanceController::class, 'timekeeping'])->name('timekeeping');
         Route::get('/statistics', [App\Http\Controllers\Web\AttendanceController::class, 'getStatistics'])->name('statistics');
+        
+        // Import DTR routes
+        Route::get('/import-dtr', [App\Http\Controllers\Web\AttendanceController::class, 'importDtr'])->name('import-dtr');
+        Route::post('/import-dtr', [App\Http\Controllers\Web\AttendanceController::class, 'processImportDtr'])->name('import-dtr.process');
+        Route::get('/import-dtr/review', [App\Http\Controllers\Web\AttendanceController::class, 'reviewImportDtr'])->name('import-dtr.review');
+        Route::post('/import-dtr/confirm', [App\Http\Controllers\Web\AttendanceController::class, 'confirmImportDtr'])->name('import-dtr.confirm');
         
             // Attendance record management routes
         Route::get('/create-record', [App\Http\Controllers\Web\AttendanceController::class, 'createRecord'])->name('create-record');

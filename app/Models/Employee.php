@@ -40,6 +40,7 @@ class Employee extends Model
             if (empty($model->id)) {
                 $model->id = Uuid::uuid4()->toString();
             }
+            // Only auto-generate employee_id if none was provided
             if (empty($model->employee_id)) {
                 $model->employee_id = 'EMP-' . str_pad(rand(1, 9999), 4, '0', STR_PAD_LEFT);
             }

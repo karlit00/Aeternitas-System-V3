@@ -92,6 +92,9 @@
                             Employee
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Employee ID
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                             Department
                         </th>
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -134,6 +137,9 @@
                                     </div>
                                 </div>
                             </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="text-sm font-medium text-gray-900">{{ $employee->employee_id }}</div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="text-sm text-gray-900">{{ $employee->department?->name ?? 'No department' }}</div>
@@ -214,6 +220,9 @@
                             </div>
                             <div class="text-sm text-gray-500 truncate">
                                 {{ $employee->account?->email ?? 'No email' }}
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                <span class="font-medium">ID:</span> {{ $employee->employee_id }}
                             </div>
                             <div class="text-sm text-gray-500">
                                 {{ $employee->department?->name ?? 'No department' }}

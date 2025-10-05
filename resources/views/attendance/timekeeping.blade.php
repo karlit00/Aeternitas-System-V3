@@ -41,6 +41,10 @@
                 <i class="fas fa-download mr-2"></i>
                 Export
             </button>
+            <a href="{{ route('attendance.import-dtr') }}" class="inline-flex items-center px-4 py-2 border border-orange-300 rounded-lg font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 transition-colors">
+                <i class="fas fa-file-import mr-2"></i>
+                Import DTR
+            </a>
             <a href="{{ route('attendance.create-record') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                 <i class="fas fa-plus mr-2"></i>
                 Add Record

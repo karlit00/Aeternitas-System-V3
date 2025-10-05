@@ -51,10 +51,12 @@ class EmployeeController extends Controller
             'salary' => 'required|numeric|min:0',
             'hire_date' => 'required|date',
             'password' => 'required|string|min:8',
+            'employee_id' => 'nullable|string|max:50|unique:employees,employee_id',
         ]);
 
         // Create employee
         $employee = Employee::create([
+            'employee_id' => $request->employee_id, // Will be auto-generated if null
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
             'phone' => $request->phone,

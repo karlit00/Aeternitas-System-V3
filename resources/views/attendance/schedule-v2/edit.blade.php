@@ -14,11 +14,11 @@
                         <p class="mt-1 text-sm text-gray-600">Update work schedule for {{ $schedule->employee->full_name }}</p>
                     </div>
                     <div class="flex space-x-3">
-                        <a href="{{ route('schedule.show', $schedule) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <a href="{{ route('schedule-v2.show', $schedule) }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-eye mr-2"></i>
                             View Schedule
                         </a>
-                        <a href="{{ isset($currentFilters) ? route('schedule.index', array_filter($currentFilters)) : route('schedule.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <a href="{{ isset($currentFilters) ? route('schedule-v2.index', array_filter($currentFilters)) : route('schedule-v2.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-arrow-left mr-2"></i>
                             Back to Schedules
                         </a>
@@ -139,7 +139,7 @@
                     
                     <!-- Update and Cancel Buttons (right side) -->
                     <div class="flex space-x-3">
-                        <a href="{{ isset($currentFilters) ? route('schedule.index', array_filter($currentFilters)) : route('schedule.index') }}" class="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <a href="{{ isset($currentFilters) ? route('schedule-v2.index', array_filter($currentFilters)) : route('schedule-v2.index') }}" class="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             Cancel
                         </a>
                         <button type="submit" id="updateBtn" class="px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
@@ -171,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Update button - set form to update action
     updateBtn.addEventListener('click', function(e) {
         e.preventDefault();
-        form.action = '{{ route("schedule.update", $schedule) }}';
+        form.action = '{{ route("schedule-v2.update", $schedule) }}';
         form.method = 'POST';
         
         // Add method override for PUT
@@ -189,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
         e.preventDefault();
         
         if (confirm('Are you sure you want to delete this schedule?')) {
-            form.action = '{{ route("schedule.destroy", $schedule) }}';
+            form.action = '{{ route("schedule-v2.destroy", $schedule) }}';
             form.method = 'POST';
             
             // Add method override for DELETE

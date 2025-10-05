@@ -17,7 +17,7 @@
                             <p class="mt-1 text-sm text-gray-600">Add a new work schedule for an employee</p>
                         @endif
                     </div>
-                    <a href="{{ isset($currentFilters) ? route('schedule.index', array_filter($currentFilters)) : route('schedule.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <a href="{{ isset($currentFilters) ? route('schedule-v2.index', array_filter($currentFilters)) : route('schedule-v2.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                         <i class="fas fa-arrow-left mr-2"></i>
                         Back to Schedules
                     </a>
@@ -29,7 +29,7 @@
     <!-- Form -->
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div class="bg-white rounded-lg shadow-sm border border-gray-200">
-            <form action="{{ route('schedule.store') }}" method="POST" class="p-6 space-y-6">
+            <form action="{{ route('schedule-v2.store') }}" method="POST" class="p-6 space-y-6">
                 @csrf
                 
                 <!-- Hidden inputs to preserve filter state -->
@@ -194,7 +194,7 @@
 
                 <!-- Form Actions -->
                 <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                    <a href="{{ isset($currentFilters) ? route('schedule.index', array_filter($currentFilters)) : route('schedule.index') }}" class="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <a href="{{ isset($currentFilters) ? route('schedule-v2.index', array_filter($currentFilters)) : route('schedule-v2.index') }}" class="px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                         <i class="fas fa-times mr-2"></i>Cancel
                     </a>
                     <button type="submit" class="px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">

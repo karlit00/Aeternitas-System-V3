@@ -1,6 +1,6 @@
 @extends('layouts.dashboard-base', ['user' => $user, 'activeRoute' => 'attendance.timekeeping'])
 
-@section('title', 'Employee Schedule Management')
+@section('title', 'Schedule Management V2')
 
 @section('content')
 <div class="min-h-screen bg-gray-50">
@@ -50,7 +50,7 @@
                 <p class="text-sm text-gray-600 mt-1">Use filters to find specific schedules or employees</p>
             </div>
             <div class="p-6">
-                <form method="GET" action="{{ route('schedule.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <form method="GET" action="{{ route('schedule-v2.index') }}" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                     <div>
                         <label for="search" class="block text-sm font-medium text-gray-700 mb-2">
                             <i class="fas fa-search mr-1"></i>Search Employee
@@ -98,9 +98,9 @@
                         </select>
                     </div>
                     
-                    <div class="sm:col-span-2 lg:col-span-4 flex justify-between items-center">
-                        <div class="flex space-x-3">
-                            <a href="{{ route('schedule.create', array_filter(['department_id' => $selectedDepartment, 'month' => $selectedMonth, 'year' => $selectedYear, 'search' => $searchQuery])) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
+                    <div class="sm:col-span-2 lg:col-span-4 flex flex-col lg:flex-row justify-between items-start lg:items-center space-y-3 lg:space-y-0">
+                        <div class="flex flex-wrap gap-2">
+                            <a href="{{ route('schedule-v2.create', array_filter(['department_id' => $selectedDepartment, 'month' => $selectedMonth, 'year' => $selectedYear, 'search' => $searchQuery])) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
                                 <i class="fas fa-plus mr-2"></i>
                                 Add Schedule
                             </a>
@@ -112,6 +112,18 @@
                                 <i class="fas fa-trash mr-2"></i>
                                 Delete Mode
                             </button>
+        <button type="button" id="dateSelectModeBtn" onclick="toggleDateSelectMode()" class="inline-flex items-center px-3 py-2 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors shadow-sm text-sm whitespace-nowrap">
+            <i class="fas fa-calendar-day mr-1"></i>
+            Select Dates
+        </button>
+        <button type="button" id="doneDateSelectBtn" onclick="showDateReviewModal()" class="inline-flex items-center px-3 py-2 bg-green-600 border border-transparent rounded-lg font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors shadow-sm text-sm whitespace-nowrap hidden">
+            <i class="fas fa-check mr-1"></i>
+            Done (<span id="selectedDatesCount">0</span>)
+        </button>
+        <button type="button" id="cancelDateSelectBtn" onclick="exitDateSelectMode()" class="inline-flex items-center px-3 py-2 bg-gray-600 border border-transparent rounded-lg font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors shadow-sm text-sm whitespace-nowrap hidden">
+            <i class="fas fa-times mr-1"></i>
+            Cancel
+        </button>
                             <button type="button" id="bulkDeleteBtn" onclick="openBulkDeleteModal()" class="inline-flex items-center px-4 py-2 bg-red-700 border border-transparent rounded-lg font-medium text-white hover:bg-red-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors shadow-sm hidden">
                                 <i class="fas fa-trash mr-2"></i>
                                 <span id="bulkDeleteText">Delete Selected</span>
@@ -189,7 +201,7 @@
                                 <i class="fas fa-user mr-2"></i>Employee
                             </th>
                             @foreach($calendarDays as $day)
-                                <th class="px-3 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider min-w-24 border-l border-gray-200">
+                                <th class="calendar-day px-3 py-4 text-center text-sm font-semibold text-gray-700 uppercase tracking-wider min-w-24 border-l border-gray-200" data-date="{{ $day['date']->format('Y-m-d') }}">
                                     <div class="flex flex-col items-center">
                                         <span class="font-bold text-lg">{{ $day['day'] }}</span>
                                         <span class="text-xs text-gray-500 font-medium">{{ $day['date']->format('D') }}</span>
@@ -200,7 +212,7 @@
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
                         @foreach($employees as $employee)
-                            <tr class="hover:bg-gray-50 transition-colors">
+                            <tr class="employee-row hover:bg-gray-50 transition-colors" data-employee-id="{{ $employee->id }}">
                                 <td class="px-6 py-5 whitespace-nowrap border-r border-gray-200">
                                     <div class="flex items-center">
                                         <div class="flex-shrink-0 h-12 w-12">
@@ -222,7 +234,7 @@
                                         $scheduleKey = $employee->id . '_' . $day['date']->format('Y-m-d');
                                         $schedule = $schedules->get($scheduleKey);
                                     @endphp
-                                    <td class="px-3 py-4 text-center border-l border-gray-200 hover:bg-gray-50 transition-colors">
+                                    <td class="calendar-day px-3 py-4 text-center border-l border-gray-200 hover:bg-gray-50 transition-colors" data-date="{{ $day['date']->format('Y-m-d') }}">
                                         @if($schedule)
                                             <div class="inline-block">
                                                 <div class="flex items-center justify-center mb-2">
@@ -240,14 +252,14 @@
                                                     </div>
                                                 @endif
                                                 <div class="mt-1">
-                                                    <a href="{{ route('schedule.edit', array_merge(['schedule' => $schedule], array_filter(['department_id' => $selectedDepartment, 'month' => $selectedMonth, 'year' => $selectedYear, 'search' => $searchQuery]))) }}" class="text-blue-600 hover:text-blue-900 text-xs">
+                                                    <a href="{{ route('schedule-v2.edit', array_merge(['schedule' => $schedule], array_filter(['department_id' => $selectedDepartment, 'month' => $selectedMonth, 'year' => $selectedYear, 'search' => $searchQuery]))) }}" class="text-blue-600 hover:text-blue-900 text-xs">
                                                         <i class="fas fa-edit"></i>
                                                     </a>
                                                 </div>
                                             </div>
                                         @else
                                             <div class="text-gray-400 text-xs">
-                                                <a href="{{ route('schedule.create', array_merge(['employee_id' => $employee->id, 'date' => $day['date']->format('Y-m-d')], array_filter(['department_id' => $selectedDepartment, 'month' => $selectedMonth, 'year' => $selectedYear, 'search' => $searchQuery]))) }}" class="hover:text-blue-600">
+                                                <a href="{{ route('schedule-v2.create', array_merge(['employee_id' => $employee->id, 'date' => $day['date']->format('Y-m-d')], array_filter(['department_id' => $selectedDepartment, 'month' => $selectedMonth, 'year' => $selectedYear, 'search' => $searchQuery]))) }}" class="hover:text-blue-600">
                                                     <i class="fas fa-plus"></i>
                                                 </a>
                                             </div>
@@ -311,7 +323,7 @@
             </button>
         </div>
         
-        <form action="{{ route('schedule.bulk-create') }}" method="POST" class="space-y-6">
+        <form action="{{ route('schedule-v2.bulk-create') }}" method="POST" class="space-y-6">
             @csrf
             
             <!-- Hidden inputs to preserve filter state -->
@@ -824,6 +836,342 @@ function showNotification(message, type) {
         notification.remove();
     }, 5000);
 }
+
+// Date Select Mode Functions
+let dateSelectMode = false;
+let selectedDates = new Set();
+
+function toggleDateSelectMode() {
+    dateSelectMode = !dateSelectMode;
+    
+    if (dateSelectMode) {
+        // Enter date select mode
+        document.getElementById('dateSelectModeBtn').classList.add('hidden');
+        document.getElementById('doneDateSelectBtn').classList.remove('hidden');
+        document.getElementById('cancelDateSelectBtn').classList.remove('hidden');
+        
+        // Reset selected dates
+        selectedDates.clear();
+        updateSelectedDatesCount();
+        
+        // Add visual indicator to calendar days
+        const calendarDays = document.querySelectorAll('.calendar-day');
+        calendarDays.forEach(day => {
+            day.classList.add('date-select-mode');
+            day.style.cursor = 'pointer';
+            day.style.border = '2px solid #8b5cf6';
+            day.style.borderRadius = '8px';
+        });
+        
+        // Show instruction
+        showDateSelectInstruction();
+    } else {
+        exitDateSelectMode();
+    }
+}
+
+function exitDateSelectMode() {
+    dateSelectMode = false;
+    selectedDates.clear();
+    
+    // Hide all buttons, show select button
+    document.getElementById('dateSelectModeBtn').classList.remove('hidden');
+    document.getElementById('doneDateSelectBtn').classList.add('hidden');
+    document.getElementById('cancelDateSelectBtn').classList.add('hidden');
+    
+    // Remove visual indicators
+    const calendarDays = document.querySelectorAll('.calendar-day');
+    calendarDays.forEach(day => {
+        day.classList.remove('date-select-mode', 'date-selected');
+        day.style.cursor = 'default';
+        day.style.border = '';
+        day.style.borderRadius = '';
+        day.style.backgroundColor = '';
+    });
+    
+    // Hide instruction
+    hideDateSelectInstruction();
+}
+
+function updateSelectedDatesCount() {
+    const count = selectedDates.size;
+    document.getElementById('selectedDatesCount').textContent = count;
+    
+    // Enable/disable Done button based on selection
+    const doneBtn = document.getElementById('doneDateSelectBtn');
+    if (count > 0) {
+        doneBtn.disabled = false;
+        doneBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+    } else {
+        doneBtn.disabled = true;
+        doneBtn.classList.add('opacity-50', 'cursor-not-allowed');
+    }
+}
+
+function showDateSelectInstruction() {
+    // Create instruction banner
+    const instruction = document.createElement('div');
+    instruction.id = 'dateSelectInstruction';
+    instruction.className = 'bg-purple-100 border border-purple-300 rounded-lg p-3 mb-4';
+    instruction.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas fa-info-circle text-purple-600 mr-2"></i>
+            <span class="text-purple-800 font-medium">Date Select Mode Active</span>
+        </div>
+        <p class="text-purple-700 text-sm mt-1">Click on dates in the calendar to select them. Click "Done" when finished to set schedules for all selected dates.</p>
+    `;
+    
+    // Insert before the schedule grid
+    const scheduleGrid = document.querySelector('.schedule-grid');
+    if (scheduleGrid) {
+        scheduleGrid.parentNode.insertBefore(instruction, scheduleGrid);
+    }
+}
+
+function hideDateSelectInstruction() {
+    const instruction = document.getElementById('dateSelectInstruction');
+    if (instruction) {
+        instruction.remove();
+    }
+}
+
+// Add click handler for calendar days in date select mode
+document.addEventListener('click', function(e) {
+    if (dateSelectMode && e.target.closest('.calendar-day')) {
+        const dayElement = e.target.closest('.calendar-day');
+        const dateStr = dayElement.getAttribute('data-date');
+        
+        if (dateStr) {
+            // Toggle date selection
+            toggleDateSelection(dateStr, dayElement);
+        }
+    }
+});
+
+function toggleDateSelection(dateStr, dayElement) {
+    if (selectedDates.has(dateStr)) {
+        // Deselect date
+        selectedDates.delete(dateStr);
+        dayElement.classList.remove('date-selected');
+        dayElement.style.backgroundColor = '';
+    } else {
+        // Select date
+        selectedDates.add(dateStr);
+        dayElement.classList.add('date-selected');
+        dayElement.style.backgroundColor = '#e0e7ff'; // Light purple background
+    }
+    
+    updateSelectedDatesCount();
+}
+
+// Date Review Modal Functions
+function showDateReviewModal() {
+    if (selectedDates.size === 0) {
+        alert('Please select at least one date');
+        return;
+    }
+    
+    // Create modal if it doesn't exist
+    let modal = document.getElementById('dateReviewModal');
+    if (!modal) {
+        modal = createDateReviewModal();
+        document.body.appendChild(modal);
+    }
+    
+    // Set the selected dates
+    const datesArray = Array.from(selectedDates).sort();
+    document.getElementById('selectedDateDisplay').textContent = formatMultipleDates(datesArray);
+    document.getElementById('selectedDateValue').value = datesArray.join(',');
+    
+    // Show modal
+    modal.classList.remove('hidden');
+    
+    // Exit date select mode
+    exitDateSelectMode();
+}
+
+function createDateReviewModal() {
+    const modal = document.createElement('div');
+    modal.id = 'dateReviewModal';
+    modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden';
+    modal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Review Selected Dates</h3>
+                <p class="text-sm text-gray-500 mt-1">Set the status for all selected dates</p>
+            </div>
+            
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Selected Dates</label>
+                        <div class="px-3 py-2 bg-gray-50 border border-gray-300 rounded-lg">
+                            <span id="selectedDateDisplay" class="text-gray-900 font-medium"></span>
+                        </div>
+                        <input type="hidden" id="selectedDateValue" value="">
+                    </div>
+                    
+                    <div>
+                        <label for="statusSelect" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="statusSelect" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                            <option value="Working">Working</option>
+                            <option value="Day Off">Day Off</option>
+                            <option value="Leave">Leave</option>
+                            <option value="Holiday">Holiday</option>
+                            <option value="Overtime">Overtime</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label for="timeIn" class="block text-sm font-medium text-gray-700 mb-2">Time In (Optional)</label>
+                        <input type="time" id="timeIn" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    
+                    <div>
+                        <label for="timeOut" class="block text-sm font-medium text-gray-700 mb-2">Time Out (Optional)</label>
+                        <input type="time" id="timeOut" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500">
+                    </div>
+                    
+                    <div>
+                        <label for="notes" class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
+                        <textarea id="notes" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500" placeholder="Add any notes..."></textarea>
+                    </div>
+                    
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div class="flex items-start">
+                            <i class="fas fa-info-circle text-blue-500 mt-0.5 mr-2"></i>
+                            <div class="text-sm text-blue-700">
+                                <p class="font-medium">What this does:</p>
+                                <ul class="mt-1 space-y-1 text-xs">
+                                    <li>• Creates schedule entries for all selected dates</li>
+                                    <li>• Applies to all employees in the current view</li>
+                                    <li>• Can be customized with time and notes</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 px-6 py-4 border-t border-gray-200">
+                <button onclick="closeDateReviewModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="saveDateSchedule()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                    <i class="fas fa-save mr-2"></i>
+                    Save Schedule
+                </button>
+            </div>
+        </div>
+    `;
+    return modal;
+}
+
+function closeDateReviewModal() {
+    const modal = document.getElementById('dateReviewModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('en-US', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+}
+
+function formatMultipleDates(datesArray) {
+    if (datesArray.length === 1) {
+        return formatDate(datesArray[0]);
+    } else if (datesArray.length <= 3) {
+        return datesArray.map(date => formatDate(date)).join(', ');
+    } else {
+        return `${datesArray.length} dates selected`;
+    }
+}
+
+function saveDateSchedule() {
+    const selectedDates = document.getElementById('selectedDateValue').value;
+    const status = document.getElementById('statusSelect').value;
+    const timeIn = document.getElementById('timeIn').value;
+    const timeOut = document.getElementById('timeOut').value;
+    const notes = document.getElementById('notes').value;
+    
+    if (!selectedDates) {
+        alert('Please select dates');
+        return;
+    }
+    
+    // Get all employee IDs from the current view
+    const employeeIds = Array.from(document.querySelectorAll('.employee-row')).map(row => 
+        row.getAttribute('data-employee-id')
+    ).filter(id => id);
+    
+    if (employeeIds.length === 0) {
+        alert('No employees found in current view');
+        return;
+    }
+    
+    // Show loading state
+    const saveBtn = event.target;
+    const originalText = saveBtn.innerHTML;
+    saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Saving...';
+    saveBtn.disabled = true;
+    
+    // Parse selected dates
+    const datesArray = selectedDates.split(',');
+    
+    // Prepare data for multiple dates
+    const requestData = {
+        dates: datesArray,
+        status: status,
+        time_in: timeIn || null,
+        time_out: timeOut || null,
+        notes: notes || null,
+        employee_ids: employeeIds
+    };
+    
+    // Send AJAX request
+    fetch('{{ route("schedule-v2.bulk-create") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: JSON.stringify(requestData)
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            showNotification(`Schedule created successfully for ${datesArray.length} date(s)!`, 'success');
+            closeDateReviewModal();
+            // Refresh the page to show updated data
+            setTimeout(() => {
+                window.location.reload();
+            }, 1000);
+        } else {
+            throw new Error(data.message || 'Failed to create schedule');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error creating schedule: ' + error.message, 'error');
+    })
+    .finally(() => {
+        // Restore button state
+        saveBtn.innerHTML = originalText;
+        saveBtn.disabled = false;
+    });
+}
 </script>
 
 <!-- Bulk Delete Confirmation Modal -->
@@ -862,5 +1210,6 @@ function showNotification(message, type) {
         </div>
     </div>
 </div>
+
 
 @endsection
