@@ -107,6 +107,15 @@ Route::middleware('auth')->group(function () {
             Route::get('/templates', [App\Http\Controllers\Web\AttendanceController::class, 'scheduleTemplates'])->name('templates');
         });
         
+        // Period Management routes
+        Route::prefix('period-management')->name('period-management.')->group(function () {
+            Route::get('/', [App\Http\Controllers\Web\PeriodManagementController::class, 'index'])->name('index');
+            Route::get('/create', [App\Http\Controllers\Web\PeriodManagementController::class, 'create'])->name('create');
+            Route::post('/', [App\Http\Controllers\Web\PeriodManagementController::class, 'store'])->name('store');
+            Route::get('/{period}', [App\Http\Controllers\Web\PeriodManagementController::class, 'show'])->name('show');
+            Route::delete('/{period}', [App\Http\Controllers\Web\PeriodManagementController::class, 'destroy'])->name('destroy');
+        });
+        
         // Overtime routes
         Route::get('/overtime', [App\Http\Controllers\Web\OvertimeController::class, 'index'])->name('overtime');
         Route::post('/overtime', [App\Http\Controllers\Web\OvertimeController::class, 'store'])->name('overtime.store');
