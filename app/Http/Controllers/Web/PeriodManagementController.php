@@ -225,6 +225,12 @@ class PeriodManagementController extends Controller
                 $actualInOut = $this->formatActualTime($attendanceRecord);
                 $workingHours = $this->calculateWorkingHours($schedule);
                 
+                // Create combined status - if both are Day Off, just show Day Off
+                $combinedStatus = $scheduleStatus;
+                if ($scheduleStatus !== 'Day Off' || $attendanceStatus !== 'Day Off') {
+                    $combinedStatus = $scheduleStatus . ' - ' . $attendanceStatus;
+                }
+                
                 $comprehensiveData[] = [
                     'employee_id' => $employee->id,
                     'employee_code' => $employee->employee_code,
@@ -238,7 +244,7 @@ class PeriodManagementController extends Controller
                     'overtime' => $overtime,
                     'schedule_status' => $scheduleStatus,
                     'attendance_status' => $attendanceStatus,
-                    'combined_status' => $scheduleStatus . ' - ' . $attendanceStatus,
+                    'combined_status' => $combinedStatus,
                 ];
                 
                 $currentDate->addDay();
@@ -262,7 +268,7 @@ class PeriodManagementController extends Controller
                 return 'Working';
             case 'Day Off':
             case 'Rest Day':
-                return 'Rest Day';
+                return 'Day Off';
             case 'Holiday':
                 return 'Holiday';
             case 'Leave':
@@ -277,6 +283,7 @@ class PeriodManagementController extends Controller
      * 
      * This method implements a comprehensive attendance logic system:
      * 
+     * Rule 0: If schedule is Day Off → Day Off (regardless of attendance)
      * Rule 1: No Time In and No Time Out → Absent
      * Rule 2: Has only Time In or Time Out → Error  
      * Rule 3: Time In is later than Schedule Out → Absent (compares time parts only)
@@ -288,10 +295,15 @@ class PeriodManagementController extends Controller
      * 
      * @param AttendanceRecord|null $attendanceRecord Employee's attendance record
      * @param EmployeeSchedule|null $schedule Employee's schedule for the day
-     * @return string Attendance status: 'Present', 'Absent', 'Error'
+     * @return string Attendance status: 'Present', 'Absent', 'Error', 'Day Off'
      */
     private function getAttendanceStatus($attendanceRecord, $schedule = null)
     {
+        // Rule 0: If schedule is Day Off → Day Off (regardless of attendance)
+        if ($schedule && ($schedule->status === 'Day Off' || $schedule->status === 'Rest Day')) {
+            return 'Day Off';
+        }
+        
         if (!$attendanceRecord) {
             return 'Absent';
         }
@@ -525,10 +537,11 @@ class PeriodManagementController extends Controller
             'present_days' => collect($comprehensiveData)->where('attendance_status', 'Present')->count(),
             'absent_days' => collect($comprehensiveData)->where('attendance_status', 'Absent')->count(),
             'error_days' => collect($comprehensiveData)->where('attendance_status', 'Error')->count(),
+            'day_off_days' => collect($comprehensiveData)->where('attendance_status', 'Day Off')->count(),
             'total_overtime_hours' => collect($comprehensiveData)->sum('overtime'),
             'working_days' => collect($comprehensiveData)->where('schedule_status', 'Working')->count(),
             'holiday_days' => collect($comprehensiveData)->where('schedule_status', 'Holiday')->count(),
-            'rest_days' => collect($comprehensiveData)->where('schedule_status', 'Rest Day')->count(),
+            'rest_days' => collect($comprehensiveData)->where('schedule_status', 'Day Off')->count(),
         ];
         
         return $summary;

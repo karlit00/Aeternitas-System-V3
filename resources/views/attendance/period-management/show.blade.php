@@ -223,6 +223,7 @@
                                                 @if($record['attendance_status'] === 'Present') bg-green-100 text-green-800
                                                 @elseif($record['attendance_status'] === 'Absent') bg-red-100 text-red-800
                                                 @elseif($record['attendance_status'] === 'Error') bg-yellow-100 text-yellow-800
+                                                @elseif($record['attendance_status'] === 'Day Off') bg-gray-100 text-gray-800
                                                 @else bg-gray-100 text-gray-800
                                                 @endif">
                                                 @if($record['attendance_status'] === 'Present')
@@ -231,6 +232,8 @@
                                                     🔴 {{ $record['combined_status'] }}
                                                 @elseif($record['attendance_status'] === 'Error')
                                                     🟡 {{ $record['combined_status'] }}
+                                                @elseif($record['attendance_status'] === 'Day Off')
+                                                    ⚪ {{ $record['combined_status'] }}
                                                 @else
                                                     ⚪ {{ $record['combined_status'] }}
                                                 @endif

@@ -624,14 +624,17 @@ class DtrImportService
         $hasAttendance = $timeIn || $timeOut;
         
         if ($scheduleStatus) {
+            // Handle Day Off schedules first - always return day_off regardless of attendance
+            if ($scheduleStatus === 'Day Off' || $scheduleStatus === 'Rest Day') {
+                return 'day_off';
+            }
+            
             if ($hasAttendance) {
                 // Employee has both schedule and attendance - show attendance status
                 return $this->determineAttendanceStatus($timeIn, $timeOut, $totalHours);
             } else {
                 // Employee has schedule but no attendance - show schedule-based status
                 switch ($scheduleStatus) {
-                    case 'Day Off':
-                        return 'day_off';
                     case 'Leave':
                         return 'leave';
                     case 'Holiday':
