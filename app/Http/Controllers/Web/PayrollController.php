@@ -5,11 +5,20 @@ namespace App\Http\Controllers\Web;
 use App\Http\Controllers\Controller;
 use App\Models\Payroll;
 use App\Models\Employee;
+use App\Models\Department;
+use App\Services\PayrollGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class PayrollController extends Controller
 {
+    protected $payrollService;
+
+    public function __construct(PayrollGenerationService $payrollService)
+    {
+        $this->payrollService = $payrollService;
+    }
     public function index(Request $request)
     {
         $query = Payroll::with('employee.department');
@@ -188,5 +197,110 @@ class PayrollController extends Controller
             ->get();
 
         return view('payrolls.monthly-report', compact('report', 'request'));
+    }
+
+    /**
+     * Show form to generate payroll from period management
+     */
+    public function generateFromPeriod()
+    {
+        // Get recent periods from session (you might want to store these in database)
+        $periods = session('periods', []);
+        $employees = Employee::with('department')->get();
+        $departments = Department::all();
+
+        return view('payroll.generate-from-period', compact('periods', 'employees', 'departments'));
+    }
+
+    /**
+     * Generate payroll from period management data
+     */
+    public function generateFromPeriodData(Request $request)
+    {
+        $request->validate([
+            'period_id' => 'required|string',
+            'employee_ids' => 'nullable|array',
+            'employee_ids.*' => 'exists:employees,id',
+        ]);
+
+        try {
+            // Get period data from session
+            $periods = session('periods', []);
+            $periodData = collect($periods)->firstWhere('id', $request->period_id);
+
+            if (!$periodData) {
+                return redirect()->back()->with('error', 'Period not found.');
+            }
+
+            // Generate payroll for the period
+            $generatedPayrolls = $this->payrollService->generatePayrollForPeriod(
+                $periodData, 
+                $request->employee_ids
+            );
+
+            if (empty($generatedPayrolls)) {
+                return redirect()->back()->with('error', 'No payroll records were generated.');
+            }
+
+            return redirect()->route('payroll.index')
+                ->with('success', 'Payroll generated successfully for ' . count($generatedPayrolls) . ' employees.');
+
+        } catch (\Exception $e) {
+            \Log::error('Payroll generation failed: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Failed to generate payroll: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Show payroll details for a specific period
+     */
+    public function showPeriodPayroll(Request $request)
+    {
+        $request->validate([
+            'start_date' => 'required|date',
+            'end_date' => 'required|date|after:start_date',
+        ]);
+
+        $startDate = Carbon::parse($request->start_date);
+        $endDate = Carbon::parse($request->end_date);
+
+        $payrolls = Payroll::where('pay_period_start', $startDate->format('Y-m-d'))
+            ->where('pay_period_end', $endDate->format('Y-m-d'))
+            ->with('employee.department')
+            ->get();
+
+        $summary = $this->payrollService->getPayrollSummary($startDate, $endDate);
+
+        return view('payroll.period-details', compact('payrolls', 'summary', 'startDate', 'endDate'));
+    }
+
+
+
+
+
+    /**
+     * Update payroll status
+     */
+    public function updateStatus(Request $request, Payroll $payroll)
+    {
+        $request->validate([
+            'status' => 'required|in:pending,processed,paid,cancelled',
+        ]);
+
+        $payroll->update([
+            'status' => $request->status,
+            'processed_at' => $request->status === 'processed' ? now() : $payroll->processed_at,
+        ]);
+
+        return redirect()->back()->with('success', 'Payroll status updated successfully.');
+    }
+
+    /**
+     * Export payroll data
+     */
+    public function export(Request $request)
+    {
+        // Implementation for payroll export
+        return response()->json(['message' => 'Export functionality to be implemented']);
     }
 }
