@@ -186,7 +186,7 @@
                         </span>
                         <span class="flex items-center">
                             <div class="w-3 h-3 bg-red-500 rounded-full mr-2"></div>
-                            Leave/Holiday
+                            Leave/Holidays
                         </span>
                     </div>
                 </div>
@@ -430,7 +430,8 @@
                                     <option value="Working">Working</option>
                                     <option value="Day Off">Day Off</option>
                                     <option value="Leave">Leave</option>
-                                    <option value="Holiday">Holiday</option>
+                                    <option value="Regular Holiday">Regular Holiday</option>
+                                    <option value="Special Holiday">Special Holiday</option>
                                     <option value="Overtime">Overtime</option>
                                 </select>
                             </div>
@@ -1117,7 +1118,8 @@ function createDateReviewModal() {
                             <option value="Working">Working</option>
                             <option value="Day Off">Day Off</option>
                             <option value="Leave">Leave</option>
-                            <option value="Holiday">Holiday</option>
+                            <option value="Regular Holiday">Regular Holiday</option>
+                            <option value="Special Holiday">Special Holiday</option>
                             <option value="Overtime">Overtime</option>
                         </select>
                     </div>

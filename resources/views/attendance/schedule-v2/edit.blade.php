@@ -70,7 +70,8 @@
                         <option value="Working" {{ old('status', $schedule->status) == 'Working' ? 'selected' : '' }}>Working</option>
                         <option value="Day Off" {{ old('status', $schedule->status) == 'Day Off' ? 'selected' : '' }}>Day Off</option>
                         <option value="Leave" {{ old('status', $schedule->status) == 'Leave' ? 'selected' : '' }}>Leave</option>
-                        <option value="Holiday" {{ old('status', $schedule->status) == 'Holiday' ? 'selected' : '' }}>Holiday</option>
+                        <option value="Regular Holiday" {{ old('status', $schedule->status) == 'Regular Holiday' ? 'selected' : '' }}>Regular Holiday</option>
+                        <option value="Special Holiday" {{ old('status', $schedule->status) == 'Special Holiday' ? 'selected' : '' }}>Special Holiday</option>
                         <option value="Overtime" {{ old('status', $schedule->status) == 'Overtime' ? 'selected' : '' }}>Overtime</option>
                     </select>
                     @error('status')

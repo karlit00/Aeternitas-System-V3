@@ -25,6 +25,7 @@ class AttendanceRecord extends Model
         'total_hours',
         'regular_hours',
         'overtime_hours',
+        'night_shift',
         'status',
         'notes',
         'created_by',
@@ -39,6 +40,7 @@ class AttendanceRecord extends Model
         'total_hours' => 'decimal:2',
         'regular_hours' => 'decimal:2',
         'overtime_hours' => 'decimal:2',
+        'night_shift' => 'boolean',
     ];
 
     protected static function boot()
@@ -158,5 +160,122 @@ class AttendanceRecord extends Model
         }
 
         return 'absent';
+    }
+
+    /**
+     * Check if this attendance record is a night shift (10pm-6am)
+     */
+    public function isNightShift(): bool
+    {
+        if (!$this->time_in || !$this->time_out) {
+            return false;
+        }
+
+        $timeIn = \Carbon\Carbon::parse($this->time_in);
+        $timeOut = \Carbon\Carbon::parse($this->time_out);
+        
+        // Night shift period: 10:00 PM (22:00) to 6:00 AM (06:00)
+        $nightStart = 22; // 10 PM
+        $nightEnd = 6;    // 6 AM
+        
+        // Convert times to minutes for easier calculation
+        $timeInMinutes = $timeIn->hour * 60 + $timeIn->minute;
+        $timeOutMinutes = $timeOut->hour * 60 + $timeOut->minute;
+        
+        // Determine if work spans across midnight
+        $spansMidnight = $timeOutMinutes < $timeInMinutes;
+        
+        if ($spansMidnight) {
+            // Work spans across midnight (e.g., 10 PM to 2 AM)
+            $midnightMinutes = 24 * 60; // 1440 minutes
+            
+            // Check if time_in is in night period (10 PM to midnight)
+            if ($timeInMinutes >= $nightStart * 60) {
+                return true;
+            }
+            
+            // Check if time_out is in night period (midnight to 6 AM)
+            if ($timeOutMinutes <= $nightEnd * 60) {
+                return true;
+            }
+        } else {
+            // Work within the same day
+            $nightStartMinutes = $nightStart * 60; // 10 PM = 1320 minutes
+            $nightEndMinutes = $nightEnd * 60;     // 6 AM = 360 minutes
+            $midnightMinutes = 24 * 60;            // 1440 minutes
+            
+            // Check if work overlaps with evening night period (10 PM to midnight)
+            if ($timeInMinutes >= $nightStartMinutes && $timeInMinutes < $midnightMinutes) {
+                return true;
+            }
+            
+            // Check if work overlaps with early morning night period (midnight to 6 AM)
+            if ($timeInMinutes < $nightEndMinutes && $timeOutMinutes > $timeInMinutes) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+
+    /**
+     * Calculate night shift hours (10pm-6am)
+     */
+    public function calculateNightShiftHours(): float
+    {
+        if (!$this->time_in || !$this->time_out) {
+            return 0;
+        }
+
+        $timeIn = \Carbon\Carbon::parse($this->time_in);
+        $timeOut = \Carbon\Carbon::parse($this->time_out);
+        
+        // Night shift period: 10:00 PM (22:00) to 6:00 AM (06:00)
+        $nightStart = 22; // 10 PM
+        $nightEnd = 6;    // 6 AM
+        
+        $nightShiftHours = 0;
+        
+        // Convert times to minutes for easier calculation
+        $timeInMinutes = $timeIn->hour * 60 + $timeIn->minute;
+        $timeOutMinutes = $timeOut->hour * 60 + $timeOut->minute;
+        
+        // Determine if work spans across midnight
+        $spansMidnight = $timeOutMinutes < $timeInMinutes;
+        
+        if ($spansMidnight) {
+            // Work spans across midnight (e.g., 10 PM to 2 AM)
+            $midnightMinutes = 24 * 60; // 1440 minutes
+            
+            // Check if time_in is in night period (10 PM to midnight)
+            if ($timeInMinutes >= $nightStart * 60) {
+                $nightShiftHours += ($midnightMinutes - $timeInMinutes) / 60;
+            }
+            
+            // Check if time_out is in night period (midnight to 6 AM)
+            if ($timeOutMinutes <= $nightEnd * 60) {
+                $nightShiftHours += $timeOutMinutes / 60;
+            }
+        } else {
+            // Work within the same day
+            $nightStartMinutes = $nightStart * 60; // 10 PM = 1320 minutes
+            $nightEndMinutes = $nightEnd * 60;     // 6 AM = 360 minutes
+            $midnightMinutes = 24 * 60;            // 1440 minutes
+            
+            // Check if work overlaps with evening night period (10 PM to midnight)
+            if ($timeInMinutes >= $nightStartMinutes && $timeInMinutes < $midnightMinutes) {
+                $eveningEnd = min($timeOutMinutes, $midnightMinutes);
+                $nightShiftHours += ($eveningEnd - $timeInMinutes) / 60;
+            }
+            
+            // Check if work overlaps with early morning night period (midnight to 6 AM)
+            if ($timeInMinutes <= $nightEndMinutes && $timeOutMinutes > 0) {
+                $morningStart = max($timeInMinutes, 0);
+                $morningEnd = min($timeOutMinutes, $nightEndMinutes);
+                $nightShiftHours += ($morningEnd - $morningStart) / 60;
+            }
+        }
+        
+        return round($nightShiftHours, 2);
     }
 }

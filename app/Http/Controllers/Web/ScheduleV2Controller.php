@@ -142,7 +142,7 @@ class ScheduleV2Controller extends Controller
             'date' => 'required|date',
             'time_in' => 'sometimes|nullable|date_format:H:i',
             'time_out' => 'sometimes|nullable|date_format:H:i',
-            'status' => 'required|in:Working,Day Off,Leave,Holiday,Overtime',
+            'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
             'notes' => 'nullable|string|max:500'
         ]);
 
@@ -188,7 +188,7 @@ class ScheduleV2Controller extends Controller
             $scheduleData['time_in'] = $request->time_in;
             $scheduleData['time_out'] = $request->time_out;
         } else {
-            // For non-working statuses (Day Off, Leave, Holiday), set time values to null
+            // For non-working statuses (Day Off, Leave, Regular Holiday, Special Holiday), set time values to null
             $scheduleData['time_in'] = null;
             $scheduleData['time_out'] = null;
         }
@@ -238,7 +238,7 @@ class ScheduleV2Controller extends Controller
         $request->validate([
             'time_in' => 'sometimes|nullable|date_format:H:i',
             'time_out' => 'sometimes|nullable|date_format:H:i',
-            'status' => 'required|in:Working,Day Off,Leave,Holiday,Overtime',
+            'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
             'notes' => 'nullable|string|max:500'
         ]);
 
@@ -266,7 +266,7 @@ class ScheduleV2Controller extends Controller
             $updateData['time_in'] = $request->time_in;
             $updateData['time_out'] = $request->time_out;
         } else {
-            // For non-working statuses (Day Off, Leave, Holiday), clear time values
+            // For non-working statuses (Day Off, Leave, Regular Holiday, Special Holiday), clear time values
             $updateData['time_in'] = null;
             $updateData['time_out'] = null;
         }
@@ -308,7 +308,7 @@ class ScheduleV2Controller extends Controller
                 'employee_schedules.*.dates.*' => 'date',
                 'time_in' => 'sometimes|nullable|date_format:H:i',
                 'time_out' => 'sometimes|nullable|date_format:H:i',
-                'status' => 'required|in:Working,Day Off,Leave,Holiday,Overtime',
+                'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
                 'notes' => 'nullable|string|max:500'
             ]);
 
@@ -365,7 +365,7 @@ class ScheduleV2Controller extends Controller
                 'dates.*' => 'date',
                 'time_in' => 'sometimes|nullable|date_format:H:i',
                 'time_out' => 'sometimes|nullable|date_format:H:i',
-                'status' => 'required|in:Working,Day Off,Leave,Holiday,Overtime',
+                'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
                 'notes' => 'nullable|string|max:500'
             ]);
 
@@ -421,7 +421,7 @@ class ScheduleV2Controller extends Controller
                 'end_date' => 'required|date|after_or_equal:start_date',
                 'time_in' => 'sometimes|nullable|date_format:H:i',
                 'time_out' => 'sometimes|nullable|date_format:H:i',
-                'status' => 'required|in:Working,Day Off,Leave,Holiday,Overtime',
+                'status' => 'required|in:Working,Day Off,Leave,Regular Holiday,Special Holiday,Overtime',
                 'notes' => 'nullable|string|max:500'
             ]);
 

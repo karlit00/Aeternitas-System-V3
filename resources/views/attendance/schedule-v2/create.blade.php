@@ -146,7 +146,8 @@
                                         <option value="Working" {{ old('status') == 'Working' ? 'selected' : '' }}>Working</option>
                                         <option value="Day Off" {{ old('status') == 'Day Off' ? 'selected' : '' }}>Day Off</option>
                                         <option value="Leave" {{ old('status') == 'Leave' ? 'selected' : '' }}>Leave</option>
-                                        <option value="Holiday" {{ old('status') == 'Holiday' ? 'selected' : '' }}>Holiday</option>
+                                        <option value="Regular Holiday" {{ old('status') == 'Regular Holiday' ? 'selected' : '' }}>Regular Holiday</option>
+                                        <option value="Special Holiday" {{ old('status') == 'Special Holiday' ? 'selected' : '' }}>Special Holiday</option>
                                         <option value="Overtime" {{ old('status') == 'Overtime' ? 'selected' : '' }}>Overtime</option>
                                     </select>
                                     @error('status')

@@ -80,7 +80,7 @@
 
     <!-- Summary Cards -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-8 gap-3 mb-6">
             <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
@@ -176,6 +176,21 @@
                         <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['late_instances'] }}</h3>
                         <p class="text-xs text-gray-600">Late Arrivals</p>
                         <p class="text-xs text-gray-500">{{ number_format($summaryData['total_late_minutes']) }} min</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-indigo-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-moon text-indigo-600 text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['night_shift_instances'] }}</h3>
+                        <p class="text-xs text-gray-600">Night Shifts</p>
+                        <p class="text-xs text-gray-500">Based on Time In/Out</p>
                     </div>
                 </div>
             </div>
@@ -294,6 +309,7 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pre-Shift OT</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Post-Shift OT</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Late Arrival</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Night Shift</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     </tr>
                                 </thead>
@@ -357,6 +373,15 @@
                                                 <span class="text-red-600 font-medium">{{ $record['late_minutes'] }} min</span>
                                             @else
                                                 <span class="text-gray-400">0</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            @if($record['is_night_shift'] && $record['night_differential_hours'] > 0)
+                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800">
+                                                     {{ formatHoursToReadable($record['night_differential_hours']) }}
+                                                </span>
+                                            @else
+                                                <span class="text-gray-400">—</span>
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
