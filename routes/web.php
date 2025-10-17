@@ -61,6 +61,7 @@ Route::middleware('auth')->group(function () {
     
     // Payroll route aliases for consistency
     Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+
     Route::get('/payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
     
     // Attendance routes

@@ -2,6 +2,38 @@
 
 @section('title', 'Period Details - ' . $period['name'])
 
+@php
+    function formatHoursToReadable($decimalHours) {
+        if ($decimalHours <= 0) {
+            return '0 hrs';
+        }
+        
+        $hours = floor($decimalHours);
+        $minutes = round(($decimalHours - $hours) * 60);
+        
+        // Handle minute rounding that might exceed 59
+        if ($minutes >= 60) {
+            $hours += 1;
+            $minutes = 0;
+        }
+        
+        $result = '';
+        
+        if ($hours > 0) {
+            $result .= $hours . ' hr' . ($hours > 1 ? 's' : '');
+        }
+        
+        if ($minutes > 0) {
+            if ($hours > 0) {
+                $result .= ' ';
+            }
+            $result .= $minutes . ' min' . ($minutes > 1 ? 's' : '');
+        }
+        
+        return $result ?: '0 hrs';
+    }
+@endphp
+
 @section('content')
 <div class="min-h-screen bg-gray-50">
     <!-- Header -->
@@ -32,6 +64,10 @@
                         @endif
                     </div>
                     <div class="flex space-x-3">
+                        <a href="" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+                            <i class="fas fa-calculator mr-2"></i>
+                            Generate Payroll
+                        </a>
                         <a href="{{ route('attendance.period-management.index') }}" class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-arrow-left mr-2"></i>
                             Back to Periods
@@ -44,59 +80,102 @@
 
     <!-- Summary Cards -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-3 mb-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="h-12 w-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-users text-blue-600 text-xl"></i>
+                        <div class="h- w-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-users text-blue-600 text-sm"></i>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $summaryData['total_employees'] }}</h3>
-                        <p class="text-sm text-gray-600">Total Employees</p>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['total_employees'] }}</h3>
+                        <p class="text-xs text-gray-600">Total Employees</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="h-12 w-12 bg-green-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                        <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-check-circle text-green-600 text-sm"></i>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $summaryData['present_days'] }}</h3>
-                        <p class="text-sm text-gray-600">Present Days</p>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['present_days'] }}</h3>
+                        <p class="text-xs text-gray-600">Present Days</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="h-12 w-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                        <div class="h-8 w-8 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-purple-600 text-sm"></i>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ number_format($summaryData['total_overtime_hours'], 1) }}</h3>
-                        <p class="text-sm text-gray-600">Overtime Hours</p>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-gray-900">{{ formatHoursToReadable($summaryData['total_scheduled_hours']) }}</h3>
+                        <p class="text-xs text-gray-600">Scheduled Hours</p>
                     </div>
                 </div>
             </div>
 
-            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
                 <div class="flex items-center">
                     <div class="flex-shrink-0">
-                        <div class="h-12 w-12 bg-red-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-user-times text-red-600 text-xl"></i>
+                        <div class="h-8 w-8 bg-green-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-sun text-green-600 text-sm"></i>
                         </div>
                     </div>
-                    <div class="ml-4">
-                        <h3 class="text-lg font-semibold text-gray-900">{{ $summaryData['absent_days'] }}</h3>
-                        <p class="text-sm text-gray-600">Absent Days</p>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-gray-900">{{ formatHoursToReadable($summaryData['total_morning_overtime_hours']) }}</h3>
+                        <p class="text-xs text-gray-600">Pre-Shift Overtime</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-moon text-orange-600 text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-gray-900">{{ formatHoursToReadable($summaryData['total_evening_overtime_hours']) }}</h3>
+                        <p class="text-xs text-gray-600">Post-Shift Overtime</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-red-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-user-times text-red-600 text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['absent_days'] }}</h3>
+                        <p class="text-xs text-gray-600">Absent Days</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-3">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <div class="h-8 w-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                            <i class="fas fa-clock text-orange-600 text-sm"></i>
+                        </div>
+                    </div>
+                    <div class="ml-3">
+                        <h3 class="text-sm font-semibold text-gray-900">{{ $summaryData['late_instances'] }}</h3>
+                        <p class="text-xs text-gray-600">Late Arrivals</p>
+                        <p class="text-xs text-gray-500">{{ number_format($summaryData['total_late_minutes']) }} min</p>
                     </div>
                 </div>
             </div>
@@ -156,13 +235,41 @@
                                         $presentCount = $employeeRecords->where('attendance_status', 'Present')->count();
                                         $absentCount = $employeeRecords->where('attendance_status', 'Absent')->count();
                                         $errorCount = $employeeRecords->where('attendance_status', 'Error')->count();
+                                        $totalMorningOvertime = $employeeRecords->sum('morning_overtime');
+                                        $totalEveningOvertime = $employeeRecords->sum('evening_overtime');
                                         $totalOvertime = $employeeRecords->sum('overtime');
+                                        $lateInstances = $employeeRecords->where('late_minutes', '>', 0)->count();
+                                        $totalLateMinutes = $employeeRecords->sum('late_minutes');
+                                        
+                                        // Calculate total scheduled hours for this employee
+                                        $totalScheduledHours = 0;
+                                        foreach($employeeRecords as $record) {
+                                            if($record['scheduled_hours'] !== '—' && $record['scheduled_hours'] !== 'Holiday' && $record['scheduled_hours'] !== 'Leave' && $record['scheduled_hours'] !== 'Day Off') {
+                                                // Parse formatted hours back to decimal
+                                                if(preg_match('/(\d+)\s*hrs?\s*(\d+)\s*mins?/', $record['scheduled_hours'], $matches)) {
+                                                    $totalScheduledHours += (int)$matches[1] + ((int)$matches[2] / 60);
+                                                } elseif(preg_match('/(\d+)\s*hrs?/', $record['scheduled_hours'], $matches)) {
+                                                    $totalScheduledHours += (int)$matches[1];
+                                                } elseif(preg_match('/(\d+)\s*mins?/', $record['scheduled_hours'], $matches)) {
+                                                    $totalScheduledHours += (int)$matches[1] / 60;
+                                                }
+                                            }
+                                        }
                                     @endphp
                                     <span class="text-green-600">{{ $presentCount }}P</span>
                                     <span class="text-red-600">{{ $absentCount }}A</span>
                                     <span class="text-yellow-600">{{ $errorCount }}E</span>
-                                    @if($totalOvertime > 0)
-                                        <span class="text-blue-600">{{ number_format($totalOvertime, 1) }}h OT</span>
+                                    @if($totalScheduledHours > 0)
+                                        <span class="text-purple-600">{{ formatHoursToReadable($totalScheduledHours) }} Scheduled</span>
+                                    @endif
+                                    @if($totalMorningOvertime > 0)
+                                        <span class="text-green-600">{{ formatHoursToReadable($totalMorningOvertime) }} Pre-Shift OT</span>
+                                    @endif
+                                    @if($totalEveningOvertime > 0)
+                                        <span class="text-orange-600">{{ formatHoursToReadable($totalEveningOvertime) }} Post-Shift OT</span>
+                                    @endif
+                                    @if($lateInstances > 0)
+                                        <span class="text-red-600">{{ $lateInstances }}L ({{ $totalLateMinutes }}min)</span>
                                     @endif
                                 </div>
                                 <div class="flex-shrink-0">
@@ -183,7 +290,10 @@
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Working Hours</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actual (In–Out)</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Worked Hours</th>
-                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Overtime</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Scheduled Hours</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pre-Shift OT</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Post-Shift OT</th>
+                                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Late Arrival</th>
                                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                     </tr>
                                 </thead>
@@ -194,10 +304,18 @@
                                             {{ $record['date_formatted'] }}
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $record['schedule_in_out'] }}
+                                            @if($record['schedule_status'] === 'Holiday')
+                                                <span class="text-red-600 font-medium">{{ $record['schedule_in_out'] }}</span>
+                                            @else
+                                                {{ $record['schedule_in_out'] }}
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            {{ $record['working_hours'] }}
+                                            @if($record['schedule_status'] === 'Holiday')
+                                                <span class="text-red-600 font-medium">{{ $record['working_hours'] }}</span>
+                                            @else
+                                                {{ $record['working_hours'] }}
+                                            @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                             {{ $record['actual_in_out'] }}
@@ -212,8 +330,31 @@
                                             @endif
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                            @if($record['overtime'] > 0)
-                                                <span class="text-yellow-600 font-medium">{{ $record['overtime'] }} hrs</span>
+                                            @if($record['scheduled_hours'] === '—')
+                                                <span class="text-gray-400">{{ $record['scheduled_hours'] }}</span>
+                                            @elseif($record['scheduled_hours'] === '0 hrs')
+                                                <span class="text-orange-500 font-medium">{{ $record['scheduled_hours'] }}</span>
+                                            @else
+                                                <span class="font-medium text-purple-600">{{ $record['scheduled_hours'] }}</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            @if($record['morning_overtime'] > 0)
+                                                <span class="text-green-600 font-medium">{{ formatHoursToReadable($record['morning_overtime']) }}</span>
+                                            @else
+                                                <span class="text-gray-400">0 hrs</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            @if($record['evening_overtime'] > 0)
+                                                <span class="text-orange-600 font-medium">{{ formatHoursToReadable($record['evening_overtime']) }}</span>
+                                            @else
+                                                <span class="text-gray-400">0 hrs</span>
+                                            @endif
+                                        </td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                            @if($record['late_minutes'] > 0)
+                                                <span class="text-red-600 font-medium">{{ $record['late_minutes'] }} min</span>
                                             @else
                                                 <span class="text-gray-400">0</span>
                                             @endif
@@ -266,7 +407,7 @@
 // Export functions
 function exportToCSV() {
     const data = @json($comprehensiveData);
-    const headers = ['Employee', 'Date', 'Schedule (In–Out)', 'Working Hours', 'Actual (In–Out)', 'Worked Hours', 'Overtime', 'Status'];
+    const headers = ['Employee', 'Date', 'Schedule (In–Out)', 'Working Hours', 'Actual (In–Out)', 'Worked Hours', 'Scheduled Hours', 'Pre-Shift OT', 'Post-Shift OT', 'Late Arrival', 'Status'];
     
     let csvContent = headers.join(',') + '\n';
     
@@ -278,7 +419,10 @@ function exportToCSV() {
             record.working_hours,
             record.actual_in_out,
             record.worked_hours,
-            record.overtime > 0 ? `${record.overtime} hrs` : '0',
+            record.scheduled_hours,
+            record.morning_overtime > 0 ? `${record.morning_overtime} hrs` : '0',
+            record.evening_overtime > 0 ? `${record.evening_overtime} hrs` : '0',
+            record.late_minutes > 0 ? `${record.late_minutes} min` : '0',
             `"${record.combined_status}"`
         ];
         csvContent += row.join(',') + '\n';
