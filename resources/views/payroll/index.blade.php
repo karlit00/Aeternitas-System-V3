@@ -183,13 +183,22 @@
     <!-- Employee Rate Information -->
     @if($employees->count() > 0)
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">
-            <i class="fas fa-calculator mr-2 text-blue-600"></i>
-            Employee Daily & Hourly Rates
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-medium text-gray-900">
+                <i class="fas fa-calculator mr-2 text-blue-600"></i>
+                Employee Daily & Hourly Rates
+            </h3>
+            <div class="flex items-center space-x-2">
+                <span id="employeePaginationInfo" class="text-sm text-gray-500">
+                    Showing 1-6 of {{ $employees->count() }} employees
+                </span>
+            </div>
+        </div>
+        
+        <!-- Employee Cards Container -->
+        <div id="employeeCardsContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             @foreach($employees->take(6) as $employee)
-            <div class="border border-gray-200 rounded-lg p-4">
+            <div class="border border-gray-200 rounded-lg p-4 employee-card">
                 <div class="flex items-center justify-between mb-2">
                     <h4 class="font-medium text-gray-900">{{ $employee->full_name }}</h4>
                     <span class="text-xs text-gray-500">{{ $employee->employee_id }}</span>
@@ -215,9 +224,47 @@
             </div>
             @endforeach
         </div>
+        
+        <!-- Hidden data for JavaScript -->
+        <script type="application/json" id="employeesData">
+            {!! json_encode($employees->map(function($employee) {
+                return [
+                    'id' => $employee->id,
+                    'full_name' => $employee->full_name,
+                    'employee_id' => $employee->employee_id,
+                    'salary' => $employee->salary,
+                    'daily_rate' => $employee->daily_rate,
+                    'hourly_rate' => $employee->hourly_rate,
+                    'overtime_rate' => $employee->overtime_rate
+                ];
+            })) !!}
+        </script>
+        
+        <!-- Pagination Controls -->
         @if($employees->count() > 6)
-        <div class="mt-4 text-center">
-            <p class="text-sm text-gray-600">Showing first 6 employees. Total: {{ $employees->count() }} employees</p>
+        <div class="mt-6 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <button id="prevEmployeePage" 
+                        onclick="changeEmployeePage(-1)" 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled>
+                    <i class="fas fa-chevron-left mr-1"></i>
+                    Previous
+                </button>
+                <button id="nextEmployeePage" 
+                        onclick="changeEmployeePage(1)" 
+                        class="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                    Next
+                    <i class="fas fa-chevron-right ml-1"></i>
+                </button>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <span class="text-sm text-gray-500">Page</span>
+                <span id="currentEmployeePage" class="text-sm font-medium text-gray-900">1</span>
+                <span class="text-sm text-gray-500">of</span>
+                <span id="totalEmployeePages" class="text-sm font-medium text-gray-900">{{ ceil($employees->count() / 6) }}</span>
+            </div>
         </div>
         @endif
     </div>
@@ -925,10 +972,135 @@ function showNotification(message, type) {
     }, 3000);
 }
 
+// Employee Pagination
+let currentEmployeePage = 1;
+const employeesPerPage = 6;
+let allEmployees = [];
+
+// Initialize employee data from server
+function initializeEmployeeData() {
+    // Get all employee data from the server-side JSON
+    const employeesDataScript = document.getElementById('employeesData');
+    if (employeesDataScript) {
+        const employeesData = JSON.parse(employeesDataScript.textContent);
+        allEmployees = employeesData.map(employee => ({
+            html: generateEmployeeCardHTML(employee),
+            name: employee.full_name,
+            id: employee.employee_id
+        }));
+        updatePaginationControls();
+    } else {
+        // Fallback: use the employees that are already on the page
+        const employeeCards = document.querySelectorAll('.employee-card');
+        allEmployees = Array.from(employeeCards).map(card => ({
+            html: card.outerHTML,
+            name: card.querySelector('h4').textContent,
+            id: card.querySelector('span').textContent
+        }));
+        updatePaginationControls();
+    }
+}
+
+function generateEmployeeCardHTML(employee) {
+    return `
+        <div class="border border-gray-200 rounded-lg p-4 employee-card">
+            <div class="flex items-center justify-between mb-2">
+                <h4 class="font-medium text-gray-900">${employee.full_name}</h4>
+                <span class="text-xs text-gray-500">${employee.employee_id}</span>
+            </div>
+            <div class="space-y-2 text-sm">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Monthly Salary:</span>
+                    <span class="font-medium">₱${parseFloat(employee.salary).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Daily Rate:</span>
+                    <span class="font-medium text-blue-600">₱${parseFloat(employee.daily_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Hourly Rate:</span>
+                    <span class="font-medium text-green-600">₱${parseFloat(employee.hourly_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Overtime Rate:</span>
+                    <span class="font-medium text-orange-600">₱${parseFloat(employee.overtime_rate).toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function changeEmployeePage(direction) {
+    const totalPages = Math.ceil(allEmployees.length / employeesPerPage);
+    const newPage = currentEmployeePage + direction;
+    
+    if (newPage < 1 || newPage > totalPages) {
+        return;
+    }
+    
+    currentEmployeePage = newPage;
+    updateEmployeeDisplay();
+    updatePaginationControls();
+}
+
+function updateEmployeeDisplay() {
+    const container = document.getElementById('employeeCardsContainer');
+    const startIndex = (currentEmployeePage - 1) * employeesPerPage;
+    const endIndex = startIndex + employeesPerPage;
+    const currentEmployees = allEmployees.slice(startIndex, endIndex);
+    
+    // Clear container
+    container.innerHTML = '';
+    
+    // Add current page employees
+    currentEmployees.forEach(employee => {
+        const div = document.createElement('div');
+        div.innerHTML = employee.html;
+        container.appendChild(div.firstElementChild);
+    });
+}
+
+function updatePaginationControls() {
+    const totalPages = Math.ceil(allEmployees.length / employeesPerPage);
+    const startIndex = (currentEmployeePage - 1) * employeesPerPage + 1;
+    const endIndex = Math.min(currentEmployeePage * employeesPerPage, allEmployees.length);
+    
+    // Update page info
+    document.getElementById('employeePaginationInfo').textContent = 
+        `Showing ${startIndex}-${endIndex} of ${allEmployees.length} employees`;
+    
+    // Update page numbers
+    document.getElementById('currentEmployeePage').textContent = currentEmployeePage;
+    document.getElementById('totalEmployeePages').textContent = totalPages;
+    
+    // Update button states
+    const prevButton = document.getElementById('prevEmployeePage');
+    const nextButton = document.getElementById('nextEmployeePage');
+    
+    prevButton.disabled = currentEmployeePage === 1;
+    nextButton.disabled = currentEmployeePage === totalPages;
+    
+    if (prevButton.disabled) {
+        prevButton.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        prevButton.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+    
+    if (nextButton.disabled) {
+        nextButton.classList.add('opacity-50', 'cursor-not-allowed');
+    } else {
+        nextButton.classList.remove('opacity-50', 'cursor-not-allowed');
+    }
+}
+
 // Initialize calendar
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize with current month
     setDateRange('thisMonth');
+    
+    // Initialize employee pagination
+    initializeEmployeeData();
+    updatePaginationControls();
     
     // Close calendar when clicking outside
     document.addEventListener('click', function(e) {
