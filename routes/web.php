@@ -18,9 +18,11 @@ use App\Http\Controllers\Web\AuthController;
 |
 */
 
-// Public routes
-Route::get('/', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+// Public routes (only accessible to guests)
+Route::middleware('guest')->group(function () {
+    Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+    Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+});
 
 
 // Protected routes
@@ -55,6 +57,21 @@ Route::middleware('auth')->group(function () {
     
     // Company routes
     Route::resource('companies', App\Http\Controllers\Web\CompanyController::class);
+    
+    // HR Profile and Settings routes
+    Route::prefix('hr')->name('hr.')->group(function () {
+        Route::get('/profile', [App\Http\Controllers\Web\HrController::class, 'profile'])->name('profile');
+        Route::put('/profile', [App\Http\Controllers\Web\HrController::class, 'updateProfile'])->name('profile.update');
+        Route::get('/settings', [App\Http\Controllers\Web\HrController::class, 'settings'])->name('settings');
+        Route::put('/settings', [App\Http\Controllers\Web\HrController::class, 'updateSettings'])->name('settings.update');
+        Route::put('/settings/password', [App\Http\Controllers\Web\HrController::class, 'updatePassword'])->name('settings.password');
+        Route::post('/export-data', [App\Http\Controllers\Web\HrController::class, 'exportData'])->name('export-data');
+        Route::post('/backup-data', [App\Http\Controllers\Web\HrController::class, 'backupData'])->name('backup-data');
+        Route::get('/sessions', [App\Http\Controllers\Web\HrController::class, 'getUserSessions'])->name('sessions');
+        Route::delete('/sessions/{session}', [App\Http\Controllers\Web\HrController::class, 'terminateSession'])->name('sessions.terminate');
+        Route::delete('/sessions', [App\Http\Controllers\Web\HrController::class, 'terminateAllOtherSessions'])->name('sessions.terminate-all');
+        Route::post('/track-session', [App\Http\Controllers\Web\HrController::class, 'trackLoginSession'])->name('track-session');
+    });
     
     // Payroll routes
     Route::resource('payrolls', PayrollController::class);
