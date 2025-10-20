@@ -12,8 +12,8 @@
                     <p class="text-xs sm:text-sm text-gray-500 truncate">Welcome back, {{ $user->full_name }}</p>
                     <div class="flex items-center text-xs text-gray-400">
                         <i class="fas fa-clock mr-1"></i>
-                        <span class="hidden sm:inline">{{ \App\Helpers\TimezoneHelper::now()->format('M d, Y g:i A') }}</span>
-                        <span class="sm:hidden">{{ \App\Helpers\TimezoneHelper::now()->format('g:i A') }}</span>
+                        <span id="current-time-desktop" class="hidden sm:inline">{{ \App\Helpers\TimezoneHelper::now()->format('M d, Y g:i A') }}</span>
+                        <span id="current-time-mobile" class="sm:hidden">{{ \App\Helpers\TimezoneHelper::now()->format('g:i A') }}</span>
                         <span class="ml-1 text-blue-600">PHT</span>
                     </div>
                 </div>
@@ -95,3 +95,50 @@
         </div>
     </div>
 </header>
+
+<script>
+// Real-time clock functionality
+document.addEventListener('DOMContentLoaded', function() {
+    function updateTime() {
+        const timeElementDesktop = document.getElementById('current-time-desktop');
+        const timeElementMobile = document.getElementById('current-time-mobile');
+        
+        if (timeElementDesktop || timeElementMobile) {
+            // Get current time in Philippines timezone
+            const now = new Date();
+            const philippinesTime = new Date(now.toLocaleString("en-US", {timeZone: "Asia/Manila"}));
+            
+            // Format for desktop (full date and time)
+            const desktopFormat = philippinesTime.toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            // Format for mobile (time only)
+            const mobileFormat = philippinesTime.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            // Update elements
+            if (timeElementDesktop) {
+                timeElementDesktop.textContent = desktopFormat;
+            }
+            if (timeElementMobile) {
+                timeElementMobile.textContent = mobileFormat;
+            }
+        }
+    }
+    
+    // Update time immediately
+    updateTime();
+    
+    // Update time every second
+    setInterval(updateTime, 1000);
+});
+</script>
