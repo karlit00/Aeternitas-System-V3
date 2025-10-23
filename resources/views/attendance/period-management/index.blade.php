@@ -113,37 +113,37 @@
                             @foreach($periods as $period)
                                 <tr class="period-row hover:bg-gray-50 transition-colors">
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="text-sm font-medium text-gray-900">{{ $period['name'] }}</div>
-                                        @if($period['description'])
-                                            <div class="text-xs text-gray-500 mt-1">{{ $period['description'] }}</div>
+                                        <div class="text-sm font-medium text-gray-900">{{ $period->name }}</div>
+                                        @if($period->description)
+                                            <div class="text-xs text-gray-500 mt-1">{{ $period->description }}</div>
                                         @endif
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-900">
-                                            {{ \Carbon\Carbon::parse($period['start_date'])->format('M j, Y') }} - 
-                                            {{ \Carbon\Carbon::parse($period['end_date'])->format('M j, Y') }}
+                                            {{ $period->start_date->format('M j, Y') }} - 
+                                            {{ $period->end_date->format('M j, Y') }}
                                         </div>
                                         <div class="text-xs text-gray-500">
-                                            {{ \Carbon\Carbon::parse($period['start_date'])->diffInDays(\Carbon\Carbon::parse($period['end_date'])) + 1 }} days
+                                            {{ $period->duration }} days
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="text-sm text-gray-900">
-                                            {{ \Carbon\Carbon::parse($period['created_at'])->format('M j, Y g:i A') }}
+                                            {{ $period->created_at->format('M j, Y g:i A') }}
                                         </div>
                                         <div class="text-xs text-gray-500">
-                                            by {{ $period['created_by'] }}
+                                            by {{ $period->created_by }}
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                         <div class="flex items-center justify-end gap-2">
-                                            <a href="{{ route('attendance.period-management.show', $period['id']) }}" 
+                                            <a href="{{ route('attendance.period-management.show', $period->id) }}" 
                                                class="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-700 rounded-md text-sm font-medium hover:bg-blue-200 transition-colors">
                                                 <i class="fas fa-eye mr-1"></i>
                                                 View
                                             </a>
                                             
-                                            <button type="button" onclick="openDeleteModal('{{ $period['id'] }}', '{{ addslashes($period['name']) }}')" 
+                                            <button type="button" onclick="openDeleteModal('{{ $period->id }}', '{{ addslashes($period->name) }}')" 
                                                     class="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-700 rounded-md text-sm font-medium hover:bg-red-200 transition-colors">
                                                 <i class="fas fa-trash mr-1"></i>
                                                 Delete

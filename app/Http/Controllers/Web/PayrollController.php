@@ -204,8 +204,10 @@ class PayrollController extends Controller
      */
     public function generateFromPeriod()
     {
-        // Get recent periods from session (you might want to store these in database)
-        $periods = session('periods', []);
+        // Get recent periods from database
+        $periods = \App\Models\Period::with('department')
+            ->orderBy('created_at', 'desc')
+            ->get();
         $employees = Employee::with('department')->get();
         $departments = Department::all();
 
@@ -215,7 +217,7 @@ class PayrollController extends Controller
     /**
      * Generate payroll from period management data
      */
-    public function generateFromPeriodData(Request $request)
+public function generateFromPeriodData(Request $request)
     {
         $request->validate([
             'period_id' => 'required|string',
@@ -224,13 +226,22 @@ class PayrollController extends Controller
         ]);
 
         try {
-            // Get period data from session
-            $periods = session('periods', []);
-            $periodData = collect($periods)->firstWhere('id', $request->period_id);
+            // Get period data from database
+            $period = \App\Models\Period::find($request->period_id);
 
-            if (!$periodData) {
+            if (!$period) {
                 return redirect()->back()->with('error', 'Period not found.');
             }
+
+            // Convert period to array format for the service
+            $periodData = [
+                'id' => $period->id,
+                'name' => $period->name,
+                'start_date' => $period->start_date->format('Y-m-d'),
+                'end_date' => $period->end_date->format('Y-m-d'),
+                'department_id' => $period->department_id,
+                'employee_ids' => $period->employee_ids,
+            ];
 
             // Generate payroll for the period
             $generatedPayrolls = $this->payrollService->generatePayrollForPeriod(

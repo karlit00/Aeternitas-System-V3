@@ -1,6 +1,6 @@
 @extends('layouts.dashboard-base', ['user' => $user, 'activeRoute' => 'attendance.period-management.index'])
 
-@section('title', 'Period Details - ' . $period['name'])
+@section('title', 'Period Details - ' . $period->name)
 
 @php
     function formatHoursToReadable($decimalHours) {
@@ -42,21 +42,21 @@
             <div class="py-6">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">{{ $period['name'] }}</h1>
+                        <h1 class="text-2xl font-bold text-gray-900">{{ $period->name }}</h1>
                         <p class="mt-1 text-sm text-gray-600">
-                            {{ \Carbon\Carbon::parse($period['start_date'])->format('M j, Y') }} - 
-                            {{ \Carbon\Carbon::parse($period['end_date'])->format('M j, Y') }}
+                            {{ $period->start_date->format('M j, Y') }} - 
+                            {{ $period->end_date->format('M j, Y') }}
                         </p>
-                        @if($period['description'])
-                            <p class="mt-1 text-sm text-gray-500">{{ $period['description'] }}</p>
+                        @if($period->description)
+                            <p class="mt-1 text-sm text-gray-500">{{ $period->description }}</p>
                         @endif
-                        @if(!empty($period['department_id']) || !empty($period['employee_ids']))
+                        @if(!empty($period->department_id) || !empty($period->employee_ids))
                             <div class="mt-2">
                                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
                                     <i class="fas fa-filter mr-1"></i>
-                                    @if(!empty($period['employee_ids']) && count($period['employee_ids']) > 0)
-                                        {{ count($period['employee_ids']) }} Employee(s) Analysis
-                                    @elseif(!empty($period['department_id']))
+                                    @if(!empty($period->employee_ids) && count($period->employee_ids) > 0)
+                                        {{ count($period->employee_ids) }} Employee(s) Analysis
+                                    @elseif(!empty($period->department_id))
                                         Department Filtered Analysis
                                     @endif
                                 </span>
@@ -64,15 +64,15 @@
                         @endif
                     </div>
                     <div class="flex space-x-3">
-                        <a href="{{ route('attendance.period-management.preview-payroll', $period['id']) }}?refresh={{ time() }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <a href="{{ route('attendance.period-management.preview-payroll', $period->id) }}?refresh={{ time() }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-eye mr-2"></i>
                             Preview Payroll
                         </a>
-                        <a href="{{ route('attendance.period-management.payroll-summary', $period['id']) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                        <a href="{{ route('attendance.period-management.payroll-summary', $period->id) }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                             <i class="fas fa-chart-bar mr-2"></i>
                             Payroll Summary
                         </a>
-                        <a href="{{ route('attendance.period-management.export-payroll', $period['id']) }}" class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+                        <a href="{{ route('attendance.period-management.export-payroll', $period->id) }}" class="inline-flex items-center px-4 py-2 bg-purple-600 border border-transparent rounded-lg font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
                             <i class="fas fa-download mr-2"></i>
                             Export Payroll
                         </a>

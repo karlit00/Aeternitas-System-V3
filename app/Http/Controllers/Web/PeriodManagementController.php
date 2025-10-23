@@ -8,6 +8,7 @@ use App\Models\EmployeeSchedule;
 use App\Models\AttendanceRecord;
 use App\Models\AttendanceLog;
 use App\Models\Payroll;
+use App\Models\Period;
 use App\Services\PayrollGenerationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,8 +23,10 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
-        // Get periods from session or create default ones
-        $periods = session('periods', []);
+        // Get periods from database with relationships
+        $periods = Period::with('department')
+            ->orderBy('created_at', 'desc')
+            ->get();
         
         // Get current filter state
         $filters = $this->getFilterState($request);
@@ -58,14 +61,13 @@ class PeriodManagementController extends Controller
             'description' => 'nullable|string|max:500',
             'start_date' => 'required|date',
             'end_date' => 'required|date|after_or_equal:start_date',
+            'department_id' => 'nullable|exists:departments,id',
+            'employee_ids' => 'nullable|array',
+            'employee_ids.*' => 'exists:employees,id',
         ]);
 
-        // Get existing periods from session
-        $periods = session('periods', []);
-        
-        // Create new period
-        $period = [
-            'id' => uniqid(),
+        // Create new period in database
+        $period = Period::create([
             'name' => $request->name,
             'description' => $request->description,
             'start_date' => $request->start_date,
@@ -73,14 +75,7 @@ class PeriodManagementController extends Controller
             'department_id' => $request->department_id,
             'employee_ids' => $request->employee_ids ?? [],
             'created_by' => Auth::user()->full_name,
-            'created_at' => now()->toDateTimeString(),
-        ];
-        
-        // Add to periods array
-        $periods[] = $period;
-        
-        // Store in session
-        session(['periods' => $periods]);
+        ]);
         
         return redirect()->route('attendance.period-management.index')
             ->with('success', 'Period created successfully.');
@@ -93,11 +88,8 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
-        // Get periods from session
-        $periods = session('periods', []);
-        
-        // Find the specific period
-        $period = collect($periods)->firstWhere('id', $periodId);
+        // Find the specific period from database
+        $period = Period::with('department')->find($periodId);
         
         if (!$period) {
             return redirect()->route('attendance.period-management.index')
@@ -105,8 +97,8 @@ class PeriodManagementController extends Controller
         }
         
         // Convert to Carbon dates
-        $startDate = Carbon::parse($period['start_date']);
-        $endDate = Carbon::parse($period['end_date']);
+        $startDate = Carbon::parse($period->start_date);
+        $endDate = Carbon::parse($period->end_date);
         
         // Get current filter state for back navigation
         $currentFilters = $this->getFilterState($request);
@@ -115,13 +107,13 @@ class PeriodManagementController extends Controller
         $employees = Employee::with('department');
         
         // Apply department filter if specified
-        if (!empty($period['department_id'])) {
-            $employees = $employees->where('department_id', $period['department_id']);
+        if (!empty($period->department_id)) {
+            $employees = $employees->where('department_id', $period->department_id);
         }
         
         // Apply specific employee filter if specified
-        if (!empty($period['employee_ids']) && is_array($period['employee_ids'])) {
-            $employees = $employees->whereIn('id', $period['employee_ids']);
+        if (!empty($period->employee_ids) && is_array($period->employee_ids)) {
+            $employees = $employees->whereIn('id', $period->employee_ids);
         }
         
         $employees = $employees->get();
@@ -155,27 +147,19 @@ class PeriodManagementController extends Controller
                 ->with('error', 'Period ID is required.');
         }
         
-        // Get periods from session
-        $periods = session('periods', []);
-        
-        // Find the period to get its name for the success message
-        $periodToDelete = collect($periods)->firstWhere('id', $targetPeriodId);
+        // Find the period in database
+        $periodToDelete = Period::find($targetPeriodId);
         
         if (!$periodToDelete) {
             return redirect()->route('attendance.period-management.index')
                 ->with('error', 'Period not found.');
         }
         
-        // Remove the period
-        $periods = collect($periods)->reject(function ($period) use ($targetPeriodId) {
-            return $period['id'] === $targetPeriodId;
-        })->values()->toArray();
-        
-        // Store updated periods in session
-        session(['periods' => $periods]);
+        // Delete the period from database
+        $periodToDelete->delete();
         
         return redirect()->route('attendance.period-management.index')
-            ->with('success', "Period '{$periodToDelete['name']}' deleted successfully.");
+            ->with('success', "Period '{$periodToDelete->name}' deleted successfully.");
     }
 
     /**
@@ -866,17 +850,8 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
-        // Get periods from session
-        $periods = session('periods', []);
-        
-        // Find the specific period
-        $period = null;
-        foreach ($periods as $p) {
-            if ($p['id'] == $periodId) {
-                $period = $p;
-                break;
-            }
-        }
+        // Find the specific period from database
+        $period = Period::with('department')->find($periodId);
         
         if (!$period) {
             return redirect()->route('attendance.period-management.index')
@@ -885,20 +860,20 @@ class PeriodManagementController extends Controller
         
         try {
             // Convert to Carbon dates
-            $startDate = Carbon::parse($period['start_date']);
-            $endDate = Carbon::parse($period['end_date']);
+            $startDate = Carbon::parse($period->start_date);
+            $endDate = Carbon::parse($period->end_date);
             
             // Get employees for the period
             $employees = Employee::with('department');
             
             // Apply department filter if specified
-            if (!empty($period['department_id'])) {
-                $employees = $employees->where('department_id', $period['department_id']);
+            if (!empty($period->department_id)) {
+                $employees = $employees->where('department_id', $period->department_id);
             }
             
             // Apply specific employee filter if specified
-            if (!empty($period['employee_ids']) && is_array($period['employee_ids'])) {
-                $employees = $employees->whereIn('id', $period['employee_ids']);
+            if (!empty($period->employee_ids) && is_array($period->employee_ids)) {
+                $employees = $employees->whereIn('id', $period->employee_ids);
             }
             
             $employees = $employees->get();
@@ -911,9 +886,19 @@ class PeriodManagementController extends Controller
             // Force refresh comprehensive attendance data (clear any potential caching)
             $comprehensiveData = $this->getComprehensiveAttendanceData($startDate, $endDate, $employees);
             
+            // Convert period to array format for the service
+            $periodData = [
+                'id' => $period->id,
+                'name' => $period->name,
+                'start_date' => $period->start_date->format('Y-m-d'),
+                'end_date' => $period->end_date->format('Y-m-d'),
+                'department_id' => $period->department_id,
+                'employee_ids' => $period->employee_ids,
+            ];
+            
             // Generate payroll preview (without saving to database)
             $payrollService = new PayrollGenerationService();
-            $previewPayrolls = $payrollService->generatePayrollPreview($period, $comprehensiveData);
+            $previewPayrolls = $payrollService->generatePayrollPreview($periodData, $comprehensiveData);
             
             // Add employee information to preview data
             foreach ($previewPayrolls as &$previewPayroll) {
@@ -928,7 +913,7 @@ class PeriodManagementController extends Controller
             // Store preview data in session for approval with timestamp
             $generatedAt = now();
             session(['payroll_preview' => [
-                'period' => $period,
+                'period' => $periodData,
                 'payrolls' => $previewPayrolls,
                 'generated_at' => $generatedAt,
                 'data_refreshed' => true
@@ -1026,11 +1011,8 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
-        // Get periods from session
-        $periods = session('periods', []);
-        
-        // Find the specific period
-        $period = collect($periods)->firstWhere('id', $periodId);
+        // Find the specific period from database
+        $period = Period::with('department')->find($periodId);
         
         if (!$period) {
             return redirect()->route('attendance.period-management.index')
@@ -1038,8 +1020,8 @@ class PeriodManagementController extends Controller
         }
         
         // Convert to Carbon dates
-        $startDate = Carbon::parse($period['start_date']);
-        $endDate = Carbon::parse($period['end_date']);
+        $startDate = Carbon::parse($period->start_date);
+        $endDate = Carbon::parse($period->end_date);
         
         // Get payroll records for this period
         $payrolls = Payroll::where('pay_period_start', $startDate->format('Y-m-d'))
@@ -1079,11 +1061,8 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
-        // Get periods from session
-        $periods = session('periods', []);
-        
-        // Find the specific period
-        $period = collect($periods)->firstWhere('id', $periodId);
+        // Find the specific period from database
+        $period = Period::with('department')->find($periodId);
         
         if (!$period) {
             return redirect()->route('attendance.period-management.index')
@@ -1091,8 +1070,8 @@ class PeriodManagementController extends Controller
         }
         
         // Convert to Carbon dates
-        $startDate = Carbon::parse($period['start_date']);
-        $endDate = Carbon::parse($period['end_date']);
+        $startDate = Carbon::parse($period->start_date);
+        $endDate = Carbon::parse($period->end_date);
         
         // Get payroll records for this period
         $payrolls = Payroll::where('pay_period_start', $startDate->format('Y-m-d'))
@@ -1100,7 +1079,7 @@ class PeriodManagementController extends Controller
             ->with('employee.department')
             ->get();
         
-        $filename = 'payroll_' . $period['name'] . '_' . $startDate->format('Y-m-d') . '_to_' . $endDate->format('Y-m-d') . '.csv';
+        $filename = 'payroll_' . $period->name . '_' . $startDate->format('Y-m-d') . '_to_' . $endDate->format('Y-m-d') . '.csv';
         
         $headers = [
             'Content-Type' => 'text/csv',
