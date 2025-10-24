@@ -112,6 +112,7 @@ class PayrollGenerationService
         
         // Calculate totals
         // Gross pay should NOT include deductions - deductions are subtracted from gross pay to get net pay
+        // FIXED: Basic salary now uses full scheduled hours, late deductions applied separately
         $grossPay = $basicSalaryData['amount'] + $holidayData['holiday_premium'] + $holidayData['special_holiday_premium'] + $overtimeData['overtime_pay'] + $nightDifferentialData['night_differential_pay'] + $bonuses;
         $taxAmount = $this->calculateTax($grossPay);
         $netPay = $grossPay - $deductions - $taxAmount;
@@ -180,6 +181,7 @@ class PayrollGenerationService
         
         // Calculate totals
         // Gross pay should NOT include deductions - deductions are subtracted from gross pay to get net pay
+        // FIXED: Basic salary now uses full scheduled hours, late deductions applied separately
         $grossPay = $basicSalaryData['amount'] + $holidayData['holiday_premium'] + $holidayData['special_holiday_premium'] + $overtimeData['overtime_pay'] + $nightDifferentialData['night_differential_pay'] + $bonuses;
         $taxAmount = $this->calculateTax($grossPay);
         $netPay = $grossPay - $deductions - $taxAmount;
@@ -244,23 +246,33 @@ class PayrollGenerationService
         });
         
         foreach ($workingRecords as $record) {
-            // Parse scheduled hours from the formatted string (e.g., "7 hrs 1 min" -> 7.017 hours)
-            $scheduledHours = $this->parseFormattedHours($record['scheduled_hours']);
-            $totalScheduledHours += $scheduledHours;
+            // FIXED: Use full scheduled hours (8 hours for full day) instead of actual worked hours
+            // This prevents double deduction - late time will be handled by late deductions
+            $fullScheduledHours = 8; // Default to 8 hours for full working day
+            
+            // For holidays, use the actual scheduled hours if available
+            if (($record['schedule_status'] === 'Regular Holiday' || $record['schedule_status'] === 'Special Holiday')) {
+                $holidayHours = $this->parseFormattedHours($record['scheduled_hours']);
+                if ($holidayHours > 0) {
+                    $fullScheduledHours = $holidayHours;
+                }
+            }
+            
+            $totalScheduledHours += $fullScheduledHours;
             
             // Store details for display
             $scheduledHoursDetails[] = [
                 'date' => $record['date_formatted'],
-                'hours' => $record['scheduled_hours'],
-                'decimal_hours' => $scheduledHours
+                'hours' => $fullScheduledHours . ' hrs', // Show full scheduled hours
+                'decimal_hours' => $fullScheduledHours
             ];
         }
         
-        // Calculate basic salary based on daily rate and scheduled hours
-        // Formula: Basic Salary = Daily Rate × (Scheduled Hours / 8)
+        // Calculate basic salary based on daily rate and FULL scheduled hours
+        // Formula: Basic Salary = Daily Rate × (Full Scheduled Hours / 8)
+        // Late deductions will be applied separately to avoid double penalty
         $dailyRate = $employee->daily_rate;
         $basicSalary = $dailyRate * ($totalScheduledHours / 8);
-        
         
         // Calculate hourly rate for reference
         $hourlyRate = $dailyRate / 8;
