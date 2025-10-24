@@ -190,8 +190,10 @@
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Salary</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regular Holiday</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Special Holiday</th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Overtime</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Regular OverTime</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Night Differential</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Bonuses</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Late</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Deductions</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tax</th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Gross Pay</th>
@@ -242,10 +244,50 @@
                                 <div class="text-xs text-gray-500">₱{{ number_format($payroll['overtime_hours'] * $payroll['overtime_rate'], 2) }}</div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                <div class="font-medium">₱{{ number_format($payroll['night_differential_pay'], 2) }}</div>
+                                @if(isset($payroll['night_differential_hours']) && $payroll['night_differential_hours'] > 0)
+                                    <div class="text-xs text-gray-500">
+                                        <i class="fas fa-moon mr-1"></i>{{ number_format($payroll['night_differential_hours'], 1) }} hrs
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        @ ₱{{ number_format($payroll['night_differential_rate'], 2) }}/hr
+                                    </div>
+                                @else
+                                    <div class="text-xs text-gray-500">
+                                        <i class="fas fa-moon mr-1"></i>0.0 hrs
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 ₱{{ number_format($payroll['bonuses'], 2) }}
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">
-                                ₱{{ number_format($payroll['deductions'], 2) }}
+                                @if(isset($payroll['deductions_details']) && $payroll['deductions_details']['total_late_minutes'] > 0)
+                                    <div class="font-medium">₱{{ number_format($payroll['deductions_details']['total_late_deduction'], 2) }}</div>
+                                    <div class="text-xs text-red-500 mt-1">
+                                        <i class="fas fa-clock mr-1"></i>{{ $payroll['deductions_details']['total_late_minutes'] }} mins late
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        ({{ $payroll['deductions_details']['late_days_count'] }} day{{ $payroll['deductions_details']['late_days_count'] > 1 ? 's' : '' }})
+                                    </div>
+                                    
+                                @else
+                                    <div class="font-medium">₱0.00</div>
+                                    <div class="text-xs text-gray-500 mt-1">
+                                        <i class="fas fa-clock mr-1"></i>0 mins late
+                                    </div>
+                                    <div class="text-xs text-gray-500">
+                                        (0 days)
+                                    </div>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">
+                                <div class="font-medium">₱{{ number_format($payroll['deductions'], 2) }}</div>
+                                @if($payroll['deductions'] > 0 && (!isset($payroll['deductions_details']) || $payroll['deductions_details']['total_late_minutes'] == 0))
+                                    <div class="text-xs text-gray-500">
+                                        Other deductions
+                                    </div>
+                                @endif
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                 ₱{{ number_format($payroll['tax_amount'], 2) }}
@@ -266,7 +308,9 @@
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱{{ number_format($summaryData['total_holiday_premium'], 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱{{ number_format($summaryData['total_special_holiday_premium'], 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱{{ number_format($summaryData['total_overtime_pay'], 2) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱{{ number_format(collect($previewPayrolls)->sum('night_differential_pay'), 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱{{ number_format($summaryData['total_bonuses'], 2) }}</td>
+                            <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">₱{{ number_format(collect($previewPayrolls)->sum(function($p) { return isset($p['deductions_details']) ? $p['deductions_details']['total_late_deduction'] : 0; }), 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-red-600">₱{{ number_format($summaryData['total_deductions'], 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">₱{{ number_format($summaryData['total_tax'], 2) }}</td>
                             <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">₱{{ number_format($summaryData['total_gross_pay'], 2) }}</td>
@@ -276,6 +320,7 @@
                 </table>
             </div>
         </div>
+
 
         <!-- Action Buttons -->
         <div class="mt-6">
