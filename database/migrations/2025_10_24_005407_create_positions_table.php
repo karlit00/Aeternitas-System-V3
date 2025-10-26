@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('positions', function (Blueprint $table) {
+        if (!Schema::hasTable('positions')) {
+            Schema::create('positions', function (Blueprint $table) {
             $table->id();
             $table->string('name')->unique(); // Position name (e.g., "Manager", "Software Engineer")
             $table->string('code')->unique(); // Position code (e.g., "MGR", "SE", "RAF")
@@ -30,6 +31,7 @@ return new class extends Migration
             $table->index(['is_active', 'department_id']);
             $table->index('level');
         });
+        }
     }
 
     /**
