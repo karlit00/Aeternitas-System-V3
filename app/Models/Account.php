@@ -21,6 +21,8 @@ class Account extends Authenticatable
         'employee_id',
         'email',
         'password',
+        'password_reset_token',
+        'password_reset_expires_at',
         'role',
         'is_active',
         'last_login_at',
@@ -34,6 +36,7 @@ class Account extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'last_login_at' => 'datetime',
+        'password_reset_expires_at' => 'datetime',
         'is_active' => 'boolean',
         'password' => 'hashed',
     ];

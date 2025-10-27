@@ -90,7 +90,7 @@
                         >
                         <span class="ml-2 text-sm text-gray-700">Remember me</span>
                     </label>
-                    <a href="#" class="text-sm text-blue-600 hover:text-blue-700 transition-colors">
+                    <a href="{{ route('password.request') }}" class="text-sm text-blue-600 hover:text-blue-700 transition-colors">
                         Forgot password?
                     </a>
                 </div>

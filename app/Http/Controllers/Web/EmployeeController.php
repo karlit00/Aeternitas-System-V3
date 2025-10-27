@@ -7,8 +7,10 @@ use App\Models\Employee;
 use App\Models\Department;
 use App\Models\Account;
 use App\Helpers\CompanyHelper;
+use App\Mail\EmployeeWelcomeMail;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 
 class EmployeeController extends Controller
@@ -91,15 +93,27 @@ class EmployeeController extends Controller
         $employee = Employee::create($employeeData);
 
         // Create account
-        Account::create([
+        $account = Account::create([
             'employee_id' => $employee->id,
             'email' => $request->email,
             'password' => Hash::make($request->password),
             'role' => $request->role ?? 'employee',
         ]);
 
+        // Send welcome email to employee
+        try {
+            Mail::to($account->email)->send(new EmployeeWelcomeMail(
+                $employee->fresh(['department']), 
+                $request->password, 
+                $account
+            ));
+        } catch (\Exception $e) {
+            // Log error but don't fail the employee creation
+            \Log::error('Failed to send welcome email: ' . $e->getMessage());
+        }
+
         return redirect()->route('employees.index')
-            ->with('success', 'Employee created successfully.');
+            ->with('success', 'Employee created successfully and welcome email sent.');
     }
 
     /**
