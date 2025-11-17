@@ -107,13 +107,13 @@ class PayrollGenerationService
         $overtimeData = $this->calculateOvertimeFromRecords($employee, $employeeRecords);
         $nightDifferentialData = $this->calculateNightDifferentialFromRecords($employee, $employeeRecords);
         $holidayData = $this->calculateHolidayPayFromRecords($employee, $employeeRecords);
+        $restDayPremiumData = $this->calculateRestDayPremiumFromRecords($employee, $employeeRecords);
         $bonuses = $this->calculateBonusesFromRecords($employee, $employeeRecords);
         $deductions = $this->calculateDeductionsFromRecords($employee, $employeeRecords);
         
         // Calculate totals
         // Gross pay should NOT include deductions - deductions are subtracted from gross pay to get net pay
-        // FIXED: Basic salary now uses full scheduled hours, late deductions applied separately
-        $grossPay = $basicSalaryData['amount'] + $holidayData['holiday_premium'] + $holidayData['special_holiday_premium'] + $overtimeData['overtime_pay'] + $nightDifferentialData['night_differential_pay'] + $bonuses;
+        $grossPay = $basicSalaryData['amount'] + $holidayData['holiday_premium'] + $holidayData['special_holiday_premium'] + $overtimeData['overtime_pay'] + $nightDifferentialData['night_differential_pay'] + $restDayPremiumData['rest_day_premium_pay'] + $bonuses;
         $taxAmount = $this->calculateTax($grossPay);
         $netPay = $grossPay - $deductions - $taxAmount;
 
@@ -137,6 +137,8 @@ class PayrollGenerationService
             'night_differential_hours' => $nightDifferentialData['night_differential_hours'],
             'night_differential_rate' => $nightDifferentialData['night_differential_rate'],
             'night_differential_pay' => $nightDifferentialData['night_differential_pay'],
+            'rest_day_days' => $restDayPremiumData['rest_day_days'],
+            'rest_day_premium_pay' => $restDayPremiumData['rest_day_premium_pay'],
             'bonuses' => $bonuses,
             'deductions' => $deductions,
             'deductions_details' => $lateMinutesDetails,
@@ -176,13 +178,13 @@ class PayrollGenerationService
         $overtimeData = $this->calculateOvertimeFromRecords($employee, $employeeRecords);
         $nightDifferentialData = $this->calculateNightDifferentialFromRecords($employee, $employeeRecords);
         $holidayData = $this->calculateHolidayPayFromRecords($employee, $employeeRecords);
+        $restDayPremiumData = $this->calculateRestDayPremiumFromRecords($employee, $employeeRecords);
         $bonuses = $this->calculateBonusesFromRecords($employee, $employeeRecords);
         $deductions = $this->calculateDeductionsFromRecords($employee, $employeeRecords);
         
         // Calculate totals
         // Gross pay should NOT include deductions - deductions are subtracted from gross pay to get net pay
-        // FIXED: Basic salary now uses full scheduled hours, late deductions applied separately
-        $grossPay = $basicSalaryData['amount'] + $holidayData['holiday_premium'] + $holidayData['special_holiday_premium'] + $overtimeData['overtime_pay'] + $nightDifferentialData['night_differential_pay'] + $bonuses;
+        $grossPay = $basicSalaryData['amount'] + $holidayData['holiday_premium'] + $holidayData['special_holiday_premium'] + $overtimeData['overtime_pay'] + $nightDifferentialData['night_differential_pay'] + $restDayPremiumData['rest_day_premium_pay'] + $bonuses;
         $taxAmount = $this->calculateTax($grossPay);
         $netPay = $grossPay - $deductions - $taxAmount;
 
@@ -223,8 +225,11 @@ class PayrollGenerationService
         
         // Calculate total scheduled hours for records where employee actually worked
         // Include all work (regular days + holidays) for basic salary calculation
+        // Note: Leave days with attendance are treated as rest day work (1.2x premium) and excluded from basic salary
+        // Leave days without attendance are not paid
         $workingRecords = $employeeRecords->filter(function($record) {
-            // Exclude if schedule status is 'Leave' - even if they have time_in, they shouldn't be paid
+            // Exclude Leave days - rest day work (Leave with attendance) gets premium pay separately (1.2x)
+            // Leave without attendance is not paid
             if ($record['schedule_status'] === 'Leave') {
                 return false;
             }
@@ -246,33 +251,23 @@ class PayrollGenerationService
         });
         
         foreach ($workingRecords as $record) {
-            // FIXED: Use full scheduled hours (8 hours for full day) instead of actual worked hours
-            // This prevents double deduction - late time will be handled by late deductions
-            $fullScheduledHours = 8; // Default to 8 hours for full working day
-            
-            // For holidays, use the actual scheduled hours if available
-            if (($record['schedule_status'] === 'Regular Holiday' || $record['schedule_status'] === 'Special Holiday')) {
-                $holidayHours = $this->parseFormattedHours($record['scheduled_hours']);
-                if ($holidayHours > 0) {
-                    $fullScheduledHours = $holidayHours;
-                }
-            }
-            
-            $totalScheduledHours += $fullScheduledHours;
+            // Parse scheduled hours from the formatted string (e.g., "7 hrs 1 min" -> 7.017 hours)
+            $scheduledHours = $this->parseFormattedHours($record['scheduled_hours']);
+            $totalScheduledHours += $scheduledHours;
             
             // Store details for display
             $scheduledHoursDetails[] = [
                 'date' => $record['date_formatted'],
-                'hours' => $fullScheduledHours . ' hrs', // Show full scheduled hours
-                'decimal_hours' => $fullScheduledHours
+                'hours' => $record['scheduled_hours'],
+                'decimal_hours' => $scheduledHours
             ];
         }
         
-        // Calculate basic salary based on daily rate and FULL scheduled hours
-        // Formula: Basic Salary = Daily Rate × (Full Scheduled Hours / 8)
-        // Late deductions will be applied separately to avoid double penalty
+        // Calculate basic salary based on daily rate and scheduled hours
+        // Formula: Basic Salary = Daily Rate × (Scheduled Hours / 8)
         $dailyRate = $employee->daily_rate;
         $basicSalary = $dailyRate * ($totalScheduledHours / 8);
+        
         
         // Calculate hourly rate for reference
         $hourlyRate = $dailyRate / 8;
@@ -303,63 +298,41 @@ class PayrollGenerationService
 
     /**
      * Calculate night differential from comprehensive records
-     * Formula: hourly rate × 0.1 × night hours
      */
     private function calculateNightDifferentialFromRecords(Employee $employee, $employeeRecords): array
     {
         $nightShiftHours = $employeeRecords->sum('night_differential_hours');
-        $hourlyRate = $employee->daily_rate / 8; // Daily rate / 8 hours
-        $nightDifferentialRate = $hourlyRate * 0.1; // 10% of hourly rate
-        $nightDifferentialPay = $nightShiftHours * $nightDifferentialRate;
+        $nightDifferentialPay = $nightShiftHours * $employee->night_differential_rate;
 
         return [
             'night_differential_hours' => $nightShiftHours,
-            'night_differential_rate' => round($nightDifferentialRate, 2),
+            'night_differential_rate' => $employee->night_differential_rate,
             'night_differential_pay' => round($nightDifferentialPay, 2)
         ];
     }
 
     /**
-     * Calculate holiday pay from comprehensive records based on actual hours worked
+     * Calculate holiday pay from comprehensive records
      */
     private function calculateHolidayPayFromRecords(Employee $employee, $employeeRecords): array
     {
-        $regularHolidayDays = 0;
-        $specialHolidayDays = 0;
-        $regularHolidayHours = 0;
-        $specialHolidayHours = 0;
+        $regularHolidayDays = $employeeRecords->where('schedule_status', 'Regular Holiday')->count();
+        $specialHolidayDays = $employeeRecords->where('schedule_status', 'Special Holiday')->count();
         
-        // Calculate actual hours worked on holidays
-        foreach ($employeeRecords as $record) {
-            if ($record['schedule_status'] === 'Regular Holiday') {
-                $regularHolidayDays++;
-                $regularHolidayHours += $this->parseFormattedHours($record['scheduled_hours']);
-            } elseif ($record['schedule_status'] === 'Special Holiday') {
-                $specialHolidayDays++;
-                $specialHolidayHours += $this->parseFormattedHours($record['scheduled_hours']);
-            }
-        }
+        // Calculate holiday premium based on full days (8 hours per day)
+        // Regular holiday: 100% premium on full days (8 hours per day)
+        $regularHolidayPremium = $regularHolidayDays * $employee->daily_rate; // 100% holiday premium per day
         
-        // Calculate hourly rate
-        $hourlyRate = $employee->daily_rate / 8; // Daily rate / 8 hours
+        // Special holiday: 30% premium on full days (8 hours per day)
+        $specialHolidayPremium = $specialHolidayDays * $employee->daily_rate * 0.3; // 30% holiday premium per day
         
-        // Calculate holiday basic pay based on actual hours worked
-        $regularHolidayBasicPay = $regularHolidayHours * $hourlyRate;
-        $specialHolidayBasicPay = $specialHolidayHours * $hourlyRate;
+        // Basic pay for holidays (will be added to basic salary column)
+        $holidayBasicPay = ($regularHolidayDays + $specialHolidayDays) * $employee->daily_rate;
         
-        // Calculate holiday premium based on actual hours worked
-        // Regular holiday: 100% premium on hours worked (double pay)
-        $regularHolidayPremium = $regularHolidayHours * $hourlyRate; // 100% premium = double pay
-        
-        // Special holiday: 30% premium on hours worked
-        $specialHolidayPremium = $specialHolidayHours * $hourlyRate * 0.3; // 30% premium
-        
-        // Total holiday basic pay
-        $holidayBasicPay = $regularHolidayBasicPay + $specialHolidayBasicPay;
-        
-        // Total holiday pay = basic pay + premium
+        // Total holiday pay = basic pay + premium (for display purposes)
         $totalHolidayPay = $holidayBasicPay + $regularHolidayPremium + $specialHolidayPremium;
         
+
         return [
             'regular_holiday_days' => $regularHolidayDays,
             'special_holiday_days' => $specialHolidayDays,
@@ -367,6 +340,38 @@ class PayrollGenerationService
             'holiday_premium' => round($regularHolidayPremium, 2),
             'special_holiday_premium' => round($specialHolidayPremium, 2),
             'holiday_pay' => round($totalHolidayPay, 2)
+        ];
+    }
+
+    /**
+     * Calculate rest day premium from comprehensive records
+     * 
+     * When employee works on Leave day (rest day), they are paid 1.2x daily rate
+     * This applies to complete daily days worked on Leave/Rest days
+     * 
+     * @param Employee $employee
+     * @param \Illuminate\Support\Collection $employeeRecords
+     * @return array Rest day premium data
+     */
+    private function calculateRestDayPremiumFromRecords(Employee $employee, $employeeRecords): array
+    {
+        // Find Leave days where employee has attendance (worked on rest day)
+        // Only count complete days worked (has both time_in and time_out)
+        $restDayWorkRecords = $employeeRecords->filter(function($record) {
+            // Must be Leave status with Present attendance (worked on rest day)
+            return $record['schedule_status'] === 'Leave' && $record['attendance_status'] === 'Present';
+        });
+        
+        $restDayDays = $restDayWorkRecords->count();
+        
+        // Calculate rest day premium: daily_rate × 1.2 for each complete day
+        // For complete daily days worked on rest day, pay 1.2x daily rate
+        $restDayPremiumPay = $restDayDays * $employee->daily_rate * 1.2;
+        
+        return [
+            'rest_day_days' => $restDayDays,
+            'rest_day_premium_pay' => round($restDayPremiumPay, 2),
+            'rest_day_rate' => round($employee->daily_rate * 1.2, 2),
         ];
     }
 
