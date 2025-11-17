@@ -23,12 +23,11 @@ class PeriodManagementController extends Controller
     {
         $user = Auth::user();
         
-        // Get periods from database with relationships
         $periods = Period::with('department')
             ->orderBy('created_at', 'desc')
             ->get();
         
-        // Get current filter state
+       
         $filters = $this->getFilterState($request);
         
         return view('attendance.period-management.index', compact('periods', 'user', 'filters'));
@@ -212,8 +211,13 @@ class PeriodManagementController extends Controller
                 $lateMinutes = 0;
                 $isNightShift = false;
                 
-                // Only calculate attendance metrics if schedule status is 'Working' or 'Regular Holiday' or 'Special Holiday'
-                if (in_array($scheduleStatus, ['Working', 'Regular Holiday', 'Special Holiday'])) {
+                // Calculate attendance metrics if:
+                // 1. Schedule status is 'Working' or 'Regular Holiday' or 'Special Holiday'
+                // 2. Schedule status is 'Leave' AND employee has attendance (working on rest day with 1.2x premium)
+                $shouldCalculateMetrics = in_array($scheduleStatus, ['Working', 'Regular Holiday', 'Special Holiday']) ||
+                    ($scheduleStatus === 'Leave' && $attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out);
+                
+                if ($shouldCalculateMetrics) {
                     $workedHours = $this->calculateWorkedHours($attendanceRecord, $schedule);
                     $scheduledHours = $this->calculateScheduledHours($attendanceRecord, $schedule);
                     $morningOvertime = $this->calculateMorningOvertime($attendanceRecord, $schedule);
@@ -229,9 +233,17 @@ class PeriodManagementController extends Controller
                 $actualInOut = $this->formatActualTime($attendanceRecord, $scheduleStatus);
                 $workingHours = $this->calculateWorkingHours($schedule);
                 
-                // Create combined status - if both are Day Off, just show Day Off
+                // Create combined status - handle Leave days with attendance (rest day work)
+                // If employee worked on Leave day, show as "Rest Day - Present" (indicates premium pay)
                 $combinedStatus = $scheduleStatus;
-                if ($scheduleStatus !== 'Day Off' || $attendanceStatus !== 'Day Off') {
+                if ($scheduleStatus === 'Leave' && $attendanceStatus === 'Present') {
+                  
+                    $combinedStatus = 'Rest Day - Present';
+                } elseif ($scheduleStatus === 'Leave') {
+                    
+                    $combinedStatus = 'Day Off';
+                } 
+                elseif ($scheduleStatus !== 'Day Off' || $attendanceStatus !== 'Day Off') {
                     $combinedStatus = $scheduleStatus . ' - ' . $attendanceStatus;
                 }
                 
@@ -290,30 +302,24 @@ class PeriodManagementController extends Controller
         }
     }
     
-    /**
-     * Determine attendance status based on time in/out and schedule
-     * 
-     * This method implements a comprehensive attendance logic system:
-     * 
-     * Rule 0: If schedule is Day Off → Day Off (regardless of attendance)
-     * Rule 1: No Time In and No Time Out → Absentada
-     * Rule 2: Has only Time In or Time Out → Error  
-     * Rule 3: Time In is later than Schedule Out → Absent (compares time parts only)
-     * Rule 4: Both times completely outside scheduled shift → Absent
-     * Rule 5: Has both Time In and Time Out (valid range) → Present
-     * 
-     * Key Fix: Uses time-only comparison (H:i:s) instead of full datetime
-     * to prevent incorrect "Absent" results when schedule dates differ
-     * 
-     * @param AttendanceRecord|null $attendanceRecord Employee's attendance record
-     * @param EmployeeSchedule|null $schedule Employee's schedule for the day
-     * @return string Attendance status: 'Present', 'Absent', 'Error', 'Day Off'
-     */
+
     private function getAttendanceStatus($attendanceRecord, $schedule = null)
     {
-        // Rule 0: If schedule is Day Off → Day Off (regardless of attendance)
+        // Rule 0: If schedule is Day Off or Rest Day → always return 'Day Off' (no work allowed)
+        // Day Off status should never show as Present, even if there's attendance
         if ($schedule && ($schedule->status === 'Day Off' || $schedule->status === 'Rest Day')) {
-            return 'Day Off';
+            return 'Day Off'; // Always Day Off, regardless of attendance
+        }
+        
+        // Rule 0.5: If schedule is Leave → check if employee worked
+        // If employee worked on Leave, return 'Present' (rest day work with 1.2x premium)
+        // If employee didn't work, return 'Day Off'
+        if ($schedule && $schedule->status === 'Leave') {
+            // If employee has attendance (worked on Leave day/rest day), return Present
+            if ($attendanceRecord && $attendanceRecord->time_in && $attendanceRecord->time_out) {
+                return 'Present'; // Employee worked on Leave day - will be paid 1.2x premium
+            }
+            return 'Day Off'; // No attendance on Leave day
         }
         
         if (!$attendanceRecord) {
@@ -422,18 +428,7 @@ class PeriodManagementController extends Controller
         return 0; // No morning overtime
     }
 
-    /**
-     * Calculate evening overtime (time worked after scheduled end time)
-     * 
-     * This method calculates overtime for time worked after the scheduled end time:
-     * 1. Compares actual time_out with scheduled time_out
-     * 2. Returns positive hours if employee clocked out late
-     * 3. Returns 0 if employee clocked out on time or early
-     * 
-     * @param AttendanceRecord|null $attendanceRecord Employee's attendance record
-     * @param EmployeeSchedule|null $schedule Employee's schedule for the day
-     * @return float Evening overtime hours (rounded to 2 decimal places)
-     */
+   
     private function calculateEveningOvertime($attendanceRecord, $schedule)
     {
         if (
@@ -572,6 +567,11 @@ class PeriodManagementController extends Controller
         // Get schedule status for existing schedule
         $scheduleStatus = $this->getScheduleStatus($schedule);
         
+        // If schedule status is Day Off, always return null (no schedule calculations)
+        if ($scheduleStatus === 'Day Off') {
+            return null;
+        }
+        
         // SPECIAL CASE: For holidays, if employee worked (has attendance), use the actual schedule times
         if (($scheduleStatus === 'Regular Holiday' || $scheduleStatus === 'Special Holiday') && $attendanceRecord && 
             $attendanceRecord->time_in && $attendanceRecord->time_out) {
@@ -589,8 +589,26 @@ class PeriodManagementController extends Controller
             ];
         }
         
-        // If schedule status is Leave or Day Off, don't apply any schedule
-        if ($scheduleStatus === 'Leave' || $scheduleStatus === 'Day Off') {
+        // SPECIAL CASE: For Leave days, if employee worked (has attendance), use schedule for calculations
+        // Employee is working on rest day (will be paid 1.2x premium)
+        if ($scheduleStatus === 'Leave' && $attendanceRecord && 
+            $attendanceRecord->time_in && $attendanceRecord->time_out) {
+            // If schedule has times, use them
+            if ($schedule->time_in && $schedule->time_out) {
+                return [
+                    'time_in' => $schedule->time_in,
+                    'time_out' => $schedule->time_out
+                ];
+            }
+            // Fallback to default schedule if no times in schedule (for rest day work calculations)
+            return [
+                'time_in' => '09:00:00',
+                'time_out' => '18:00:00'
+            ];
+        }
+        
+        // If schedule status is Leave (without attendance), don't apply any schedule
+        if ($scheduleStatus === 'Leave') {
             return null;
         }
         
@@ -713,13 +731,12 @@ class PeriodManagementController extends Controller
             return '—';
         }
         
-        // Get effective schedule (actual or default)
+       
         $effectiveSchedule = $this->getEffectiveSchedule($schedule, $attendanceRecord);
-        
-        // If no effective schedule (Holiday/Leave), return appropriate display
+       
         if (!$effectiveSchedule) {
             $scheduleStatus = $this->getScheduleStatus($schedule);
-            // Return dash for Day Off, otherwise return the status
+          
             return $scheduleStatus === 'Day Off' ? '—' : $scheduleStatus;
         }
         
