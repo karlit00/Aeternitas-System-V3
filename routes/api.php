@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\PayrollController;
 use App\Http\Controllers\Api\DepartmentController;
 use App\Http\Controllers\TaxBracketController;
 
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -36,11 +37,23 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('departments', DepartmentController::class);
     Route::get('/departments/{department}/employees', [DepartmentController::class, 'employees']);
     
-    // Payroll routes
+    // Payroll routes - using apiResource for standard CRUD operations
     Route::apiResource('payrolls', PayrollController::class);
+    
+    // Additional payroll processing routes
     Route::post('/payrolls/{payroll}/process', [PayrollController::class, 'process']);
     Route::get('/payrolls/reports/summary', [PayrollController::class, 'summary']);
     Route::get('/payrolls/reports/monthly', [PayrollController::class, 'monthlyReport']);
+    Route::get('/payrolls/approved', [PayrollController::class, 'getApprovedPayrolls']);
+    Route::post('/payrolls/process-payments', [PayrollController::class, 'processPaymentsApi']);
+
+    // Payroll generation service endpoints
+    Route::post('/payroll/preview', [PayrollController::class, 'preview']);
+    Route::post('/payroll/generate', [PayrollController::class, 'generate']);
+    Route::post('/payroll/approve', [PayrollController::class, 'approveAll']);
+    Route::post('/payroll/process-payments', [PayrollController::class, 'processPayments']);
+    Route::post('/payroll/generate-payslips', [PayrollController::class, 'generatePayslips']);
+    Route::get('/payroll/export', [PayrollController::class, 'export']);
     
     // Tax bracket routes
     Route::get('/tax-brackets', [TaxBracketController::class, 'index']);

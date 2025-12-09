@@ -7,6 +7,7 @@ use App\Http\Controllers\Web\PayrollController;
 use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\AuthController;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -30,12 +31,13 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
-
 // Protected routes
 Route::middleware('auth')->group(function () {
-        // Dashboard
-        Route::get('/dashboard', [RoleBasedDashboardController::class, 'index'])->name('dashboard');
-    
+    // Dashboard
+    Route::get('/dashboard', [RoleBasedDashboardController::class, 'index'])->name('dashboard');
+   Route::get('/payroll/manage', [PayrollController::class, 'index'])->name('payroll.manage');
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
@@ -50,8 +52,64 @@ Route::middleware('auth')->group(function () {
     // Position routes
     Route::resource('positions', App\Http\Controllers\PositionController::class);
     
+    // Payroll routes
+    Route::resource('payrolls', PayrollController::class);
+    Route::post('/payrolls/{payroll}/process', [PayrollController::class, 'process'])->name('payrolls.process');
+    Route::get('/payrolls/reports/summary', [PayrollController::class, 'summary'])->name('payrolls.summary');
+    Route::get('/payrolls/reports/monthly', [PayrollController::class, 'monthlyReport'])->name('payrolls.monthly');
     
+    // Additional payroll processing routes
+    
+    Route::post('/payrolls/process-payments', [PayrollController::class, 'processPayments'])->name('payrolls.process-payments');
+    Route::post('/payrolls/bulk-approve', [PayrollController::class, 'bulkApprove'])->name('payrolls.bulk-approve');
+    Route::post('/payrolls/export-payroll', [PayrollController::class, 'exportPayroll'])->name('payrolls.export-payroll');
+    Route::post('/payrolls/generate-payroll', [PayrollController::class, 'generatePayroll'])->name('payrolls.generate-payroll');
+    Route::post('/payroll/generate', [\App\Http\Controllers\Web\PayrollController::class, 'generate'])->name('payrolls.generate');
+    Route::get('/ajax/payrolls/approved', [\App\Http\Controllers\Web\PayrollController::class, 'getApprovedPayrolls']);
+    Route::post('/ajax/payrolls/process-payments', [\App\Http\Controllers\Web\PayrollController::class, 'processPaymentsApi']);
+    Route::get('/ajax/payrolls/status-count', [PayrollController::class, 'getPayrollStatusCount']);
+    Route::post('/ajax/payrolls/bulk-approve', [PayrollController::class, 'ajaxBulkApprove']);
+    Route::get('/ajax/payrolls/payment-status', [PayrollController::class, 'checkPaidStatus']);
+    Route::get('/ajax/payrolls/pending', [\App\Http\Controllers\Web\PayrollController::class, 'getPendingPayrolls']);
+    Route::post('/ajax/payrolls/approve-all', [\App\Http\Controllers\Web\PayrollController::class, 'approveAllViaAjax']);
+    Route::post('/payroll/complete-workflow', [\App\Http\Controllers\Web\PayrollController::class, 'completePayrollWorkflow'])->name('payrolls.complete-workflow');
+    Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
+    Route::post('/payrolls/generate-payslips', [PayrollController::class, 'generatePayslips'])->name('payrolls.generate-payslips');
+    Route::get('/payrolls/{payroll}/download-payslip', [PayrollController::class, 'downloadPayslip'])->name('payrolls.download-payslip');
+    Route::get('/payrolls/download-all-payslips', [PayrollController::class, 'downloadAllPayslips'])->name('payrolls.download-all-payslips');
+    Route::post('/payrolls/{payroll}/generate-payslip', [PayrollController::class, 'generateSinglePayslip'])->name('payrolls.generate-payslip');
+    Route::get('/payrolls/download-all-payslips', [PayrollController::class, 'downloadAllPayslips'])->name('payrolls.download-all-payslips');
+    Route::post('/payrolls/mark-as-paid', [PayrollController::class, 'markAsPaid'])->name('payrolls.mark-as-paid');
+    Route::post('/payrolls/approve-selected', [PayrollController::class, 'approveSelected'])->name('payrolls.approve-selected');
+    Route::post('/payrolls/process-selected-payments', [PayrollController::class, 'processSelectedPayments'])->name('payrolls.process-selected-payments');
+    Route::post('/payrolls/export-detailed', [PayrollController::class, 'exportDetailed'])->name('payrolls.export-detailed');
 
+
+
+    // Payroll route aliases for consistency
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::get('/payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
+    
+    // Debug route for payroll functions
+    Route::get('/test-payroll-functions', function() {
+        $service = app(\App\Services\PayrollGenerationService::class);
+        
+        // Test components
+        $paymentModelExists = class_exists(\App\Models\Payment::class);
+        $dompdfExists = class_exists(\Barryvdh\DomPDF\Facade\Pdf::class);
+        $payrolls = \App\Models\Payroll::where('status', 'approved')->take(2)->get();
+        $storageWritable = is_writable(storage_path());
+        $payslipColumnExists = \Illuminate\Support\Facades\Schema::hasColumn('payrolls', 'payslip_file');
+        
+        return [
+            'payment_model_exists' => $paymentModelExists,
+            'dompdf_exists' => $dompdfExists,
+            'storage_writable' => $storageWritable,
+            'payslip_column_exists' => $payslipColumnExists,
+            'approved_payrolls_count' => $payrolls->count(),
+            'payrolls' => $payrolls->toArray()
+        ];
+    });
     
     // Schedule Management V2 routes
     Route::prefix('schedule-v2')->name('schedule-v2.')->group(function () {
@@ -85,17 +143,6 @@ Route::middleware('auth')->group(function () {
         Route::delete('/sessions', [App\Http\Controllers\Web\HrController::class, 'terminateAllOtherSessions'])->name('sessions.terminate-all');
         Route::post('/track-session', [App\Http\Controllers\Web\HrController::class, 'trackLoginSession'])->name('track-session');
     });
-    
-    // Payroll routes
-    Route::resource('payrolls', PayrollController::class);
-    Route::post('/payrolls/{payroll}/process', [PayrollController::class, 'process'])->name('payrolls.process');
-    Route::get('/payrolls/reports/summary', [PayrollController::class, 'summary'])->name('payrolls.summary');
-    Route::get('/payrolls/reports/monthly', [PayrollController::class, 'monthlyReport'])->name('payrolls.monthly');
-    
-    // Payroll route aliases for consistency
-    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
-
-    Route::get('/payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
     
     // Attendance routes
     Route::prefix('attendance')->name('attendance.')->group(function () {
@@ -133,7 +180,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/temp-timekeeping', [App\Http\Controllers\Web\AttendanceController::class, 'tempTimekeeping'])->name('temp-timekeeping');
         Route::post('/temp-timekeeping/approve', [App\Http\Controllers\Web\AttendanceController::class, 'approveTempTimekeeping'])->name('temp-timekeeping.approve');
         
-            // Attendance record management routes
+        // Attendance record management routes
         Route::get('/create-record', [App\Http\Controllers\Web\AttendanceController::class, 'createRecord'])->name('create-record');
         Route::post('/store-record', [App\Http\Controllers\Web\AttendanceController::class, 'storeRecord'])->name('store-record');
         Route::get('/edit-record/{id}', [App\Http\Controllers\Web\AttendanceController::class, 'editRecord'])->name('edit-record');

@@ -47,85 +47,133 @@
             </div>
 
             <!-- Payroll Overview Section -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
-                <div class="flex items-center justify-between mb-4 sm:mb-6">
-                    <h3 class="text-base sm:text-lg font-semibold text-gray-900">Payroll Overview</h3>
-                    <a href="{{ route('payroll.index') }}" class="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium">Manage Payroll</a>
-                </div>
-                
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-dollar-sign text-white text-sm"></i>
-                                </div>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-green-600">Total Payroll</p>
-                                <p class="text-lg font-semibold text-green-900">₱245,000</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-check-circle text-white text-sm"></i>
-                                </div>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-blue-600">Processed</p>
-                                <p class="text-lg font-semibold text-blue-900">25</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-clock text-white text-sm"></i>
-                                </div>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-yellow-600">Pending</p>
-                                <p class="text-lg font-semibold text-yellow-900">15</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg">
-                        <div class="flex items-center">
-                            <div class="flex-shrink-0">
-                                <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
-                                    <i class="fas fa-credit-card text-white text-sm"></i>
-                                </div>
-                            </div>
-                            <div class="ml-3">
-                                <p class="text-sm font-medium text-purple-600">Paid</p>
-                                <p class="text-lg font-semibold text-purple-900">5</p>
-                            </div>
-                        </div>
+<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sm:p-6 mb-6 sm:mb-8">
+    <div class="flex items-center justify-between mb-4 sm:mb-6">
+        <h3 class="text-base sm:text-lg font-semibold text-gray-900">Payroll Overview</h3>
+        <a href="{{ route('payroll.index') }}" class="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium">Manage Payroll</a>
+    </div>
+    
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6">
+        <div class="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-dollar-sign text-white text-sm"></i>
                     </div>
                 </div>
-                
-                <div class="mt-4 sm:mt-6 flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-                    <button class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                        <i class="fas fa-plus mr-2"></i>
-                        Generate Payroll
-                    </button>
-                    <button class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                        <i class="fas fa-download mr-2"></i>
-                        Export Payroll
-                    </button>
-                    <button class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                        <i class="fas fa-file-pdf mr-2"></i>
-                        Generate Payslips
-                    </button>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-green-600">Total Payroll</p>
+                    <p class="text-lg font-semibold text-green-900">₱245,000</p>
                 </div>
             </div>
+        </div>
+        
+        <div class="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-check-circle text-white text-sm"></i>
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-blue-600">Processed</p>
+                    <p class="text-lg font-semibold text-blue-900">25</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-lg">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-yellow-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-clock text-white text-sm"></i>
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-yellow-600">Pending</p>
+                    <p class="text-lg font-semibold text-yellow-900">15</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <div class="w-8 h-8 bg-purple-500 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-credit-card text-white text-sm"></i>
+                    </div>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium text-purple-600">Paid</p>
+                    <p class="text-lg font-semibold text-purple-900">5</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Action Buttons Section -->
+    <div class="mt-8 pt-6 border-t border-gray-100">
+        <div class="space-y-3">
+            <h4 class="text-sm font-medium text-gray-500">Payroll Actions</h4>
+            <div class="flex flex-col sm:flex-row flex-wrap gap-3">
+                <a href="{{ route('payroll.index') }}" 
+                   class="inline-flex items-center justify-center px-4 py-3 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors shadow-sm">
+                    <i class="fas fa-plus mr-2"></i>
+                    Generate Payroll
+                </a>
+                
+                <button class="inline-flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
+                    <i class="fas fa-download mr-2"></i>
+                    Export Payroll
+                </button>
+                
+                <button class="inline-flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors shadow-sm">
+                    <i class="fas fa-file-pdf mr-2"></i>
+                    Generate Payslips
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+            
+                <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Find the Generate Payroll button
+                    const generateBtn = document.querySelector('a[href="{{ route("payroll.index") }}"]');
+                    
+                    if (generateBtn) {
+                        console.log('Generate Payroll button found:', generateBtn);
+                        
+                        // Test if button works
+                        generateBtn.addEventListener('click', function(e) {
+                            console.log('Button clicked!');
+                            console.log('Target URL:', this.href);
+                            
+                            // Optional: Add confirmation
+                            if (!confirm('Navigate to Payroll Management?')) {
+                                e.preventDefault();
+                            }
+                        });
+                    } else {
+                        console.error('Generate Payroll button not found!');
+                        
+                        // Alternative: Find by text content
+                        const buttons = document.querySelectorAll('button, a');
+                        buttons.forEach(btn => {
+                            if (btn.textContent.includes('Generate Payroll')) {
+                                console.log('Found button with text:', btn);
+                                // Convert it to a link
+                                if (btn.tagName === 'BUTTON') {
+                                    btn.addEventListener('click', function() {
+                                        window.location.href = "{{ route('payroll.index') }}";
+                                    });
+                                }
+                            }
+                        });
+                    }
+                });
+                </script>
 
             <!-- Charts and Tables Section -->
             <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8 mb-6 sm:mb-8">

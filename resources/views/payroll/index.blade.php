@@ -14,13 +14,45 @@
             <button class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                 <i class="fas fa-download mr-2"></i>
                 Export Payroll
-            </button>
-            <button class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+        <form action="{{ route('payrolls.generate') }}" method="POST" class="inline" id="generatePayrollForm">
+            @csrf
+            <input type="hidden" name="start_date" id="generateStartDate" value="">
+            <input type="hidden" name="end_date" id="generateEndDate" value="">
+            <button type="button" onclick="generatePayroll()" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                 <i class="fas fa-plus mr-2"></i>
                 Generate Payroll
             </button>
+        </form>
         </div>
     </div>
+
+    <!-- Flash Messages -->
+@if(session('success'))
+<div class="mb-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+    <div class="flex items-center">
+        <i class="fas fa-check-circle mr-2"></i>
+        {{ session('success') }}
+    </div>
+</div>
+@endif
+
+@if(session('error'))
+<div class="mb-4 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+    <div class="flex items-center">
+        <i class="fas fa-exclamation-circle mr-2"></i>
+        {{ session('error') }}
+    </div>
+</div>
+@endif
+
+@if(session('info'))
+<div class="mb-4 p-4 bg-blue-100 border border-blue-400 text-blue-700 rounded-lg">
+    <div class="flex items-center">
+        <i class="fas fa-info-circle mr-2"></i>
+        {{ session('info') }}
+    </div>
+</div>
+@endif
 
     <!-- Payroll Period Selector -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
@@ -110,6 +142,62 @@
             </div>
         </div>
         
+        <!-- Additional Filters Form -->
+        <form method="GET" action="{{ route('payroll.index') }}" class="mt-6 pt-6 border-t border-gray-200">
+            <div class="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                <!-- Department Filter -->
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Department</label>
+                    <select name="department_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All Departments</option>
+                        @foreach($departments as $department)
+                            <option value="{{ $department->id }}" {{ request('department_id') == $department->id ? 'selected' : '' }}>
+                                {{ $department->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                <!-- Status Filter -->
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                    <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All Status</option>
+                        <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                        <option value="approved" {{ request('status') == 'approved' ? 'selected' : '' }}>Approved</option>
+                        <option value="paid" {{ request('status') == 'paid' ? 'selected' : '' }}>Paid</option>
+                    </select>
+                </div>
+                
+                <!-- Employee Filter -->
+                <div class="flex-1">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Employee</label>
+                    <select name="employee_id" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="">All Employees</option>
+                        @foreach($employees as $employee)
+                            <option value="{{ $employee->id }}" {{ request('employee_id') == $employee->id ? 'selected' : '' }}>
+                                {{ $employee->full_name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                
+                <!-- Apply Filters Button -->
+                <div class="self-end flex space-x-2">
+                    <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-filter mr-2"></i>Apply Filters
+                    </button>
+                    <a href="{{ route('payroll.index') }}" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i class="fas fa-times mr-2"></i>Clear
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Date Range Inputs (hidden - populated by calendar) -->
+            <input type="hidden" name="start_date" id="filterStartDate" value="{{ request('start_date', now()->startOfMonth()->format('Y-m-d')) }}">
+            <input type="hidden" name="end_date" id="filterEndDate" value="{{ request('end_date', now()->endOfMonth()->format('Y-m-d')) }}">
+        </form>
+        
         <!-- Selected Period Display -->
         <div id="selectedPeriod" class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
             <div class="flex items-center">
@@ -118,6 +206,28 @@
                     Selected Period: <span id="periodDisplay">{{ date('M d, Y') }} - {{ date('M d, Y') }}</span>
                 </span>
             </div>
+            @if(request()->anyFilled(['department_id', 'status', 'employee_id']))
+            <div class="mt-2 flex flex-wrap gap-2">
+                @if(request('department_id'))
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                    <i class="fas fa-building mr-1"></i>
+                    Department: {{ $departments->where('id', request('department_id'))->first()->name ?? 'N/A' }}
+                </span>
+                @endif
+                @if(request('status'))
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                    <i class="fas fa-check-circle mr-1"></i>
+                    Status: {{ ucfirst(request('status')) }}
+                </span>
+                @endif
+                @if(request('employee_id'))
+                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                    <i class="fas fa-user mr-1"></i>
+                    Employee: {{ $employees->where('id', request('employee_id'))->first()->full_name ?? 'N/A' }}
+                </span>
+                @endif
+            </div>
+            @endif
         </div>
     </div>
 
@@ -300,170 +410,294 @@
         </div>
     </div>
 
-    <!-- Payroll List -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                    <h3 class="text-lg font-medium text-gray-900">Employee Payroll</h3>
-                    <p class="mt-1 text-sm text-gray-600">Individual payroll records for the selected period</p>
-                </div>
-                <div class="mt-4 sm:mt-0 flex space-x-3">
-                    <button class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+<!-- Payroll List -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h3 class="text-lg font-medium text-gray-900">Employee Payroll</h3>
+                <p class="mt-1 text-sm text-gray-600">Individual payroll records for the selected period</p>
+            </div>
+            <div class="mt-4 sm:mt-0 flex space-x-3">
+                <div class="relative">
+                    <button onclick="toggleFilterDropdown()" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         <i class="fas fa-filter mr-2"></i>
                         Filter
+                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
                     </button>
-                    <button class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
+                    <div id="filterDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                        <div class="p-2">
+                            <label class="flex items-center px-2 py-1 hover:bg-gray-100 rounded cursor-pointer">
+                                <input type="checkbox" class="rounded text-blue-600">
+                                <span class="ml-2 text-sm">Pending</span>
+                            </label>
+                            <label class="flex items-center px-2 py-1 hover:bg-gray-100 rounded cursor-pointer">
+                                <input type="checkbox" class="rounded text-blue-600">
+                                <span class="ml-2 text-sm">Approved</span>
+                            </label>
+                            <label class="flex items-center px-2 py-1 hover:bg-gray-100 rounded cursor-pointer">
+                                <input type="checkbox" class="rounded text-blue-600">
+                                <span class="ml-2 text-sm">Paid</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="relative">
+                    <button onclick="toggleSortDropdown()" class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
                         <i class="fas fa-sort mr-2"></i>
                         Sort
+                        <i class="fas fa-chevron-down ml-2 text-xs"></i>
                     </button>
+                    <div id="sortDropdown" class="hidden absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                        <div class="p-2">
+                            <button class="w-full text-left px-2 py-1 hover:bg-gray-100 rounded text-sm">Name (A-Z)</button>
+                            <button class="w-full text-left px-2 py-1 hover:bg-gray-100 rounded text-sm">Name (Z-A)</button>
+                            <button class="w-full text-left px-2 py-1 hover:bg-gray-100 rounded text-sm">Net Pay (High-Low)</button>
+                            <button class="w-full text-left px-2 py-1 hover:bg-gray-100 rounded text-sm">Net Pay (Low-High)</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <!-- Desktop Table -->
-        <div class="hidden lg:block overflow-x-auto">
-            <table class="min-w-full divide-y divide-gray-200">
-                <thead class="bg-gray-50">
-                    <tr>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Employee
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Department
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Basic Salary
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Overtime
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Allowances
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Deductions
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Net Pay
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                        </th>
-                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                        </th>
-                    </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-gray-200">
-                    @forelse($payrolls as $payroll)
-                        @php
-                            $initials = strtoupper(substr($payroll->employee->first_name, 0, 1) . substr($payroll->employee->last_name, 0, 1));
-                            $statusColors = [
-                                'pending' => 'bg-yellow-100 text-yellow-800',
-                                'approved' => 'bg-green-100 text-green-800',
-                                'paid' => 'bg-blue-100 text-blue-800',
-                                'rejected' => 'bg-red-100 text-red-800'
-                            ];
-                            $statusColor = $statusColors[$payroll->status] ?? 'bg-gray-100 text-gray-800';
-                        @endphp
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="flex-shrink-0 h-10 w-10">
-                                        <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
-                                            <span class="text-sm font-medium text-white">{{ $initials }}</span>
-                                        </div>
-                                    </div>
-                                    <div class="ml-4">
-                                        <div class="text-sm font-medium text-gray-900">{{ $payroll->employee->full_name }}</div>
-                                        <div class="text-sm text-gray-500">{{ $payroll->employee->employee_id }}</div>
+    <!-- Desktop Table -->
+    <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead>
+                <tr>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                        EMPLOYEE
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                        DEPARTMENT
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                        BASIC SALARY
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                        OVERTIME
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                        ALLOWANCES
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                        DEDUCTIONS
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                        NET PAY
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                        STATUS
+                    </th>
+                    <th class="px-6 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider bg-gray-50">
+                        ACTIONS
+                    </th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                @forelse($payrolls as $payroll)
+                    @php
+                        $initials = strtoupper(substr($payroll->employee->first_name, 0, 1) . substr($payroll->employee->last_name, 0, 1));
+                        $statusColors = [
+                            'pending' => 'bg-yellow-100 text-yellow-800',
+                            'approved' => 'bg-green-100 text-green-800',
+                            'paid' => 'bg-blue-100 text-blue-800',
+                            'rejected' => 'bg-red-100 text-red-800'
+                        ];
+                        $statusColor = $statusColors[$payroll->status] ?? 'bg-gray-100 text-gray-800';
+                    @endphp
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center">
+                                <div class="h-8 w-8 flex-shrink-0">
+                                    <div class="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                                        <span class="text-xs font-semibold text-white">{{ $initials }}</span>
                                     </div>
                                 </div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">{{ $payroll->employee->department->name ?? 'N/A' }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">₱{{ number_format($payroll->basic_salary, 2) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">₱{{ number_format($payroll->overtime_pay, 2) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">₱{{ number_format($payroll->allowances, 2) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm text-gray-900">₱{{ number_format($payroll->deductions, 2) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <div class="text-sm font-medium text-gray-900">₱{{ number_format($payroll->net_pay, 2) }}</div>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap">
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
-                                    <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ str_replace('text-', 'bg-', $statusColor) }}"></div>
-                                    {{ ucfirst($payroll->status) }}
-                                </span>
-                            </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                <div class="flex space-x-2">
-                                    <button onclick="openPayrollModal('{{ $payroll->id }}')" class="text-blue-600 hover:text-blue-900 transition-colors" title="View Details">
-                                        <i class="fas fa-eye"></i>
+                                <div class="ml-3">
+                                    <div class="text-sm font-medium text-gray-900">{{ $payroll->employee->full_name }}</div>
+                                    <div class="text-xs text-gray-500">{{ $payroll->employee->employee_id }}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm text-gray-900">{{ $payroll->employee->department->name ?? 'N/A' }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900">₱{{ number_format($payroll->basic_salary, 2) }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900">₱{{ number_format($payroll->overtime_pay, 2) }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900">₱{{ number_format($payroll->allowances, 2) }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-medium text-gray-900">₱{{ number_format($payroll->deductions, 2) }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-bold text-gray-900">₱{{ number_format($payroll->net_pay, 2) }}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium {{ $statusColor }}">
+                                <div class="w-1.5 h-1.5 rounded-full mr-1.5 {{ str_replace('text-', 'bg-', $statusColor) }}"></div>
+                                {{ ucfirst($payroll->status) }}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="openPayrollModal('{{ $payroll->id }}')" 
+                                        class="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50" 
+                                        title="View Details">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                @if($payroll->status === 'pending')
+                                    <button class="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50" title="Approve">
+                                        <i class="fas fa-check"></i>
                                     </button>
-                                    @if($payroll->status === 'pending')
-                                        <button class="text-green-600 hover:text-green-900 transition-colors" title="Approve">
-                                            <i class="fas fa-check"></i>
-                                        </button>
-                                        <button class="text-red-600 hover:text-red-900 transition-colors" title="Reject">
-                                            <i class="fas fa-times"></i>
-                                        </button>
-                                    @elseif($payroll->status === 'approved')
-                                        <button class="text-purple-600 hover:text-purple-900 transition-colors" title="Pay">
-                                            <i class="fas fa-credit-card"></i>
-                                        </button>
-                                    @elseif($payroll->status === 'paid')
-                                        <button class="text-gray-600 hover:text-gray-900 transition-colors" title="Print Payslip">
-                                            <i class="fas fa-print"></i>
-                                        </button>
-                                    @endif
+                                    <button class="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50" title="Reject">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                @elseif($payroll->status === 'approved')
+                                    <button class="text-purple-600 hover:text-purple-900 p-1 rounded hover:bg-purple-50" title="Pay">
+                                        <i class="fas fa-credit-card"></i>
+                                    </button>
+                                @elseif($payroll->status === 'paid')
+                                    <button class="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-100" title="Print Payslip">
+                                        <i class="fas fa-print"></i>
+                                    </button>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="9" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center justify-center">
+                                <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                                    <i class="fas fa-file-invoice text-2xl text-gray-400"></i>
                                 </div>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="9" class="px-6 py-4 text-center text-gray-500">
-                                No payroll records found
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                                <h3 class="text-lg font-medium text-gray-900 mb-2">No payroll records found</h3>
+                                <p class="text-gray-500">Generate payroll for the selected period to view records.</p>
+                            </div>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </div>
 
-        <!-- Pagination -->
-        <div class="px-4 sm:px-6 py-4 border-t border-gray-200">
-            <div class="flex items-center justify-between">
-                <div class="flex-1 flex justify-between sm:hidden">
-                    {{ $payrolls->appends(request()->query())->links('pagination::simple-tailwind') }}
+    <!-- Pagination -->
+    <div class="px-4 sm:px-6 py-4 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+            <div class="flex-1 flex justify-between sm:hidden">
+                {{ $payrolls->appends(request()->query())->links('pagination::simple-tailwind') }}
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing
+                        <span class="font-medium">{{ $payrolls->firstItem() }}</span>
+                        to
+                        <span class="font-medium">{{ $payrolls->lastItem() }}</span>
+                        of
+                        <span class="font-medium">{{ $payrolls->total() }}</span>
+                        results
+                    </p>
                 </div>
-                <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                    <div>
-                        <p class="text-sm text-gray-700">
-                            Showing
-                            <span class="font-medium">{{ $payrolls->firstItem() }}</span>
-                            to
-                            <span class="font-medium">{{ $payrolls->lastItem() }}</span>
-                            of
-                            <span class="font-medium">{{ $payrolls->total() }}</span>
-                            results
-                        </p>
-                    </div>
-                    <div>
-                        {{ $payrolls->appends(request()->query())->links('pagination::tailwind') }}
-                    </div>
+                <div>
+                    {{ $payrolls->appends(request()->query())->links('pagination::tailwind') }}
                 </div>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Mobile Cards - Keep this section as is -->
+<div class="lg:hidden">
+    <div class="p-4 space-y-4">
+        @forelse($payrolls as $payroll)
+            @php
+                $initials = strtoupper(substr($payroll->employee->first_name, 0, 1) . substr($payroll->employee->last_name, 0, 1));
+                $statusColors = [
+                    'pending' => 'bg-yellow-100 text-yellow-800',
+                    'approved' => 'bg-green-100 text-green-800',
+                    'paid' => 'bg-blue-100 text-blue-800',
+                    'rejected' => 'bg-red-100 text-red-800'
+                ];
+                $statusColor = $statusColors[$payroll->status] ?? 'bg-gray-100 text-gray-800';
+            @endphp
+            <div class="border border-gray-200 rounded-lg p-4">
+                <div class="flex items-center justify-between mb-3">
+                    <div class="flex items-center space-x-3">
+                        <div class="h-10 w-10 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+                            <span class="text-sm font-medium text-white">{{ $initials }}</span>
+                        </div>
+                        <div>
+                            <div class="font-medium text-gray-900">{{ $payroll->employee->full_name }}</div>
+                            <div class="text-sm text-gray-500">{{ $payroll->employee->department->name ?? 'N/A' }}</div>
+                        </div>
+                    </div>
+                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium {{ $statusColor }}">
+                        <div class="w-1.5 h-1.5 rounded-full mr-1 {{ str_replace('text-', 'bg-', $statusColor) }}"></div>
+                        {{ ucfirst($payroll->status) }}
+                    </span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm mb-3">
+                    <div>
+                        <div class="text-gray-500">Basic Salary</div>
+                        <div class="font-medium">₱{{ number_format($payroll->basic_salary, 2) }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">Net Pay</div>
+                        <div class="font-medium">₱{{ number_format($payroll->net_pay, 2) }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">Overtime</div>
+                        <div class="font-medium">₱{{ number_format($payroll->overtime_pay, 2) }}</div>
+                    </div>
+                    <div>
+                        <div class="text-gray-500">Deductions</div>
+                        <div class="font-medium">₱{{ number_format($payroll->deductions, 2) }}</div>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <button onclick="openPayrollModal('{{ $payroll->id }}')" class="text-blue-600 hover:text-blue-900 transition-colors">
+                        <i class="fas fa-eye mr-1"></i>View
+                    </button>
+                    @if($payroll->status === 'pending')
+                        <button class="text-green-600 hover:text-green-900 transition-colors">
+                            <i class="fas fa-check mr-1"></i>Approve
+                        </button>
+                    @elseif($payroll->status === 'approved')
+                        <button class="text-purple-600 hover:text-purple-900 transition-colors">
+                            <i class="fas fa-credit-card mr-1"></i>Pay
+                        </button>
+                    @elseif($payroll->status === 'paid')
+                        <button class="text-gray-600 hover:text-gray-900 transition-colors">
+                            <i class="fas fa-print mr-1"></i>Print
+                        </button>
+                    @endif
+                </div>
+            </div>
+        @empty
+            <div class="text-center text-gray-500 py-8">
+                <i class="fas fa-file-invoice-dollar text-3xl mb-3 opacity-50"></i>
+                <p>No payroll records found</p>
+            </div>
+        @endforelse
+    </div>
+    
+    <!-- Mobile Pagination -->
+    <div class="px-4 py-4 border-t border-gray-200">
+        <div class="flex items-center justify-between">
+            <div class="flex-1 flex justify-between">
+                {{ $payrolls->appends(request()->query())->links('pagination::simple-tailwind') }}
+            </div>
+        </div>
+    </div>
+</div>
 
         <!-- Mobile Cards -->
         <div class="lg:hidden">
@@ -550,29 +784,191 @@
         </div>
     </div>
 
-    <!-- Payroll Actions -->
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <h3 class="text-lg font-medium text-gray-900 mb-4">Bulk Actions</h3>
-        <div class="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
-            <button class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
+<!-- Payroll Actions -->
+<div class="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+    <h3 class="text-lg font-medium text-gray-900 mb-4">Bulk Actions</h3>
+    
+    <div class="flex flex-col sm:flex-row flex-wrap gap-3">
+        <!-- Complete Workflow Button -->
+        <form action="{{ route('payrolls.complete-workflow') }}" method="POST" class="inline">
+            @csrf
+            <input type="hidden" name="start_date" id="workflowStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
+            <input type="hidden" name="end_date" id="workflowEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
+            <button type="submit" 
+                    onclick="return confirm('This will generate, approve, and process payments for all payrolls in the selected period. Continue?')"
+                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+                <i class="fas fa-bolt mr-2"></i>
+                Complete Workflow (Generate → Approve → Pay)
+            </button>
+        </form>
+
+        <!-- Approve All Pending -->
+        <div class="inline">
+            <!-- Add these hidden inputs for the Approve All Pending button -->
+            <input type="hidden" name="bulk_start_date" id="bulkStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
+            <input type="hidden" name="bulk_end_date" id="bulkEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
+            
+            <button type="button" 
+                    onclick="approveAllPendingWithConfirmation()"
+                    id="approveAllPendingBtn"
+                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                 <i class="fas fa-check-double mr-2"></i>
                 Approve All Pending
             </button>
-            <button class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+        </div>
+
+        <!-- Process Payments -->
+        <form action="{{ route('payrolls.process-payments') }}" method="POST" class="inline" id="processPaymentsForm">
+            @csrf
+            <input type="hidden" name="start_date" id="paymentStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
+            <input type="hidden" name="end_date" id="paymentEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
+            <input type="hidden" name="payroll_ids" id="payrollIds" value="">
+            
+            <button type="button" 
+                    onclick="processPayments()"
+                    id="processPaymentsBtn"
+                    class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
                 <i class="fas fa-credit-card mr-2"></i>
                 Process Payments
             </button>
-            <button class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <i class="fas fa-file-pdf mr-2"></i>
-                Generate Payslips
-            </button>
-            <button class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+        </form>
+
+        <!-- Generate Payslips -->
+        <div class="flex items-center space-x-2">
+            <!-- Generate Payslips Button -->
+            <form action="{{ route('payrolls.generate-payslips') }}" method="POST" class="inline" id="payslipForm">
+                @csrf
+                <input type="hidden" name="start_date" id="payslipStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
+                <input type="hidden" name="end_date" id="payslipEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
+                <button type="submit" 
+                        class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <i class="fas fa-file-pdf mr-2"></i>
+                    Generate Payslips
+                </button>
+            </form>
+
+            <!-- Download All Payslips Button (if there are generated payslips) -->
+            @if(isset($payslip_results) && count($payslip_results) > 0)
+            <a href="{{ route('payrolls.download-all-payslips', ['start_date' => request('start_date', date('Y-m-d')), 'end_date' => request('end_date', date('Y-m-d'))]) }}"
+            class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
                 <i class="fas fa-download mr-2"></i>
-                Export to Excel
-            </button>
+                Download All Payslips
+            </a>
+            @endif
         </div>
+
+        <!-- Export with Calculations Button -->
+        <button type="button" onclick="exportPayrollWithCalculations()" 
+                class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+            <i class="fas fa-file-excel mr-2"></i>
+            Export with Calculations
+        </button>
+
+        <!-- Export to Excel - UPDATED with dropdown format selector -->
+        <form action="{{ route('payrolls.export-payroll') }}" method="POST" class="inline" id="exportForm">
+            @csrf
+            <input type="hidden" name="start_date" id="exportStartDate" value="{{ old('start_date', request('start_date', date('Y-m-d'))) }}">
+            <input type="hidden" name="end_date" id="exportEndDate" value="{{ old('end_date', request('end_date', date('Y-m-d'))) }}">
+            <input type="hidden" name="format" id="exportFormat" value="csv">
+            <div class="relative group">
+                <button type="submit" 
+                        onclick="return confirm('Export payroll data?')"
+                        class="inline-flex items-center justify-center px-4 py-2 border border-gray-300 rounded-lg font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
+                    <i class="fas fa-download mr-2"></i>
+                    Export to Excel
+                </button>
+                <!-- Format dropdown (optional) -->
+                <div class="absolute left-0 mt-1 hidden group-hover:block bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[120px]">
+                    <button type="button" onclick="setExportFormat('csv')" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-file-csv mr-2"></i>CSV Format
+                    </button>
+                    <button type="button" onclick="setExportFormat('xlsx')" class="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        <i class="fas fa-file-excel mr-2"></i>Excel Format
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Mark as Paid (Individual) -->
+    <div class="mt-4">
+        <button onclick="markSelectedAsPaid()" 
+                class="inline-flex items-center justify-center px-4 py-2 border border-transparent rounded-lg font-medium text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 transition-colors">
+            <i class="fas fa-money-check-alt mr-2"></i>
+            Mark Selected as Paid
+        </button>
+    </div>
+
+    <!-- Checkbox for selecting payrolls -->
+    <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <label class="flex items-center">
+            <input type="checkbox" id="selectAllPayrolls" class="rounded text-blue-600 mr-2">
+            <span class="text-sm font-medium text-blue-800">Select all payroll records for bulk processing</span>
+        </label>
+        <p class="text-xs text-blue-600 mt-1 ml-6">Selected records will be processed when using bulk actions</p>
     </div>
 </div>
+
+<script>
+// Function to export with calculations
+async function exportPayrollWithCalculations() {
+    const startDate = document.getElementById('exportStartDate').value;
+    const endDate = document.getElementById('exportEndDate').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select a date range first.');
+        return;
+    }
+    
+    // Get selected payroll IDs
+    const selectedCheckboxes = document.querySelectorAll('.payroll-checkbox:checked');
+    const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    // Show loading
+    const originalText = event.target.innerHTML;
+    event.target.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Exporting...';
+    event.target.disabled = true;
+    
+    try {
+        const response = await fetch('/payrolls/export-detailed', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content
+            },
+            body: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate,
+                payroll_ids: selectedIds.length > 0 ? selectedIds : null,
+                format: 'xlsx'
+            })
+        });
+        
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `payroll_export_with_calculations_${startDate}_to_${endDate}.xlsx`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } else {
+            const errorText = await response.text();
+            console.error('Export error response:', errorText);
+            alert('Error exporting payroll data. Please check console for details.');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        alert('Error exporting payroll data: ' + error.message);
+    } finally {
+        // Reset button
+        event.target.innerHTML = originalText;
+        event.target.disabled = false;
+    }
+}
+</script>
 
 <!-- Payroll Details Modal -->
 <div id="payrollModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
@@ -675,12 +1071,92 @@
                 <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
                     <i class="fas fa-print mr-2"></i>Print Payslip
                 </button>
+
+                <!-- Payment Modal -->
+<div id="paymentModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 xl:w-1/3 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-medium text-gray-900">Process Payments</h3>
+                <button onclick="closePaymentModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <!-- Date Range Display -->
+                <div class="bg-blue-50 p-3 rounded-lg">
+                    <div class="flex items-center">
+                        <i class="fas fa-calendar-alt text-blue-600 mr-2"></i>
+                        <span class="text-sm font-medium text-blue-800">
+                            Period: <span id="paymentPeriodDisplay">{{ date('M d, Y') }} - {{ date('M d, Y') }}</span>
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Payment Method -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Payment Method</label>
+                    <select id="paymentMethod" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        <option value="bank_transfer">Bank Transfer</option>
+                        <option value="cash">Cash</option>
+                        <option value="check">Check</option>
+                        <option value="online">Online Payment</option>
+                    </select>
+                </div>
+                
+                <!-- Employee Selection -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Employees</label>
+                    <div class="border border-gray-300 rounded-lg max-h-60 overflow-y-auto">
+                        <div class="p-2 border-b">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="selectAllEmployees" onchange="toggleAllEmployees()" class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                                <label for="selectAllEmployees" class="ml-2 text-sm font-medium text-gray-700">Select All Employees</label>
+                            </div>
+                        </div>
+                        <div id="employeeList" class="p-2 space-y-2">
+                            <div class="text-center py-4 text-gray-500">
+                                <i class="fas fa-users text-gray-400 mb-2"></i>
+                                <p>Select a date range first, then employees will appear here</p>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="mt-1 text-xs text-gray-500" id="selectedCount">0 employees selected</p>
+                </div>
+                
+                <!-- Total Amount -->
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium text-gray-900">Total Amount to Process:</span>
+                        <span id="totalAmount" class="text-lg font-bold text-green-600">₱0.00</span>
+                    </div>
+                </div>
+                
+                <!-- Notes -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
+                    <textarea id="paymentNotes" rows="2" class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Add any notes about this payment..."></textarea>
+                </div>
+            </div>
+
+            <div class="flex justify-end space-x-3 mt-6">
+                <button onclick="closePaymentModal()" class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors">
+                    Cancel
+                </button>
+                <button onclick="processSelectedPayments()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-credit-card mr-2"></i>Process Payments
+                </button>
             </div>
         </div>
     </div>
 </div>
-
+            </div>
+        </div>
+    </div>
+</div>
 <script>
+// Modal Functions
 function openPayrollModal() {
     document.getElementById('payrollModal').classList.remove('hidden');
 }
@@ -695,6 +1171,153 @@ document.getElementById('payrollModal').addEventListener('click', function(e) {
         closePayrollModal();
     }
 });
+
+// Add these JavaScript functions
+
+// Select/Deselect all checkboxes
+document.getElementById('selectAllEmployees').addEventListener('change', function(e) {
+    const checkboxes = document.querySelectorAll('.payroll-checkbox');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = e.target.checked;
+    });
+});
+
+// Process payments for selected employees
+async function processSelectedPayments() {
+    const selectedCheckboxes = document.querySelectorAll('.payroll-checkbox:checked');
+    const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    if (selectedIds.length === 0) {
+        alert('Please select at least one payroll to process payment.');
+        return;
+    }
+    
+    const startDate = document.getElementById('paymentStartDate').value;
+    const endDate = document.getElementById('paymentEndDate').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select a date range first.');
+        return;
+    }
+    
+    if (confirm(`Process payments for ${selectedIds.length} selected payroll(s)?`)) {
+        try {
+            const response = await fetch('/payrolls/process-selected-payments', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    payroll_ids: selectedIds,
+                    start_date: startDate,
+                    end_date: endDate
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Successfully processed ${result.processed} payments!`);
+                location.reload(); // Refresh to show updated status
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error processing payments. Please try again.');
+        }
+    }
+}
+
+// Approve selected payrolls
+async function approveSelectedPayrolls() {
+    const selectedCheckboxes = document.querySelectorAll('.payroll-checkbox:checked');
+    const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    if (selectedIds.length === 0) {
+        alert('Please select at least one payroll to approve.');
+        return;
+    }
+    
+    const startDate = document.getElementById('bulkStartDate').value;
+    const endDate = document.getElementById('bulkEndDate').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select a date range first.');
+        return;
+    }
+    
+    if (confirm(`Approve ${selectedIds.length} selected payroll(s)?`)) {
+        try {
+            const response = await fetch('/payrolls/approve-selected', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    payroll_ids: selectedIds,
+                    start_date: startDate,
+                    end_date: endDate
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Successfully approved ${result.approved_count} payroll(s)!`);
+                location.reload(); // Refresh to show updated status
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error approving payrolls. Please try again.');
+        }
+    }
+}
+
+// Mark selected as paid
+async function markSelectedAsPaid() {
+    const selectedCheckboxes = document.querySelectorAll('.payroll-checkbox:checked');
+    const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    
+    if (selectedIds.length === 0) {
+        alert('Please select at least one payroll to mark as paid.');
+        return;
+    }
+    
+    if (confirm(`Mark ${selectedIds.length} selected payroll(s) as paid?`)) {
+        try {
+            const response = await fetch('/payrolls/mark-as-paid', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    payroll_ids: selectedIds
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(`Successfully marked ${result.marked_count} payroll(s) as paid!`);
+                location.reload(); // Refresh to show updated status
+            } else {
+                alert('Error: ' + result.message);
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Error marking as paid. Please try again.');
+        }
+    }
+}
 
 // Single Calendar Date Range Picker
 let currentDate = new Date();
@@ -845,6 +1468,7 @@ function setDateRange(preset) {
     
     updateDateRangeDisplay();
     updatePeriodDisplay();
+    updateAllDateFormFields(); // Using the updated function from second block
     generateCalendar();
 }
 
@@ -853,9 +1477,26 @@ function clearDateRange() {
     selectedToDate = null;
     isSelectingFrom = true;
     
-    // Update the display first
     updateDateRangeDisplay();
     updatePeriodDisplay();
+    
+    // Clear all form fields
+    const fields = [
+        'bulkStartDate', 'bulkEndDate',
+        'paymentStartDate', 'paymentEndDate',
+        'payslipStartDate', 'payslipEndDate',
+        'exportStartDate', 'exportEndDate'
+    ];
+    
+    fields.forEach(fieldId => {
+        const field = document.getElementById(fieldId);
+        if (field) field.value = '';
+    });
+    
+    // Clear debug info
+    document.getElementById('debugStartDate').textContent = 'Not set';
+    document.getElementById('debugEndDate').textContent = 'Not set';
+    document.getElementById('debugApprovedCount').textContent = 'Not set';
     
     // Only regenerate calendar if it's visible
     const calendarPopup = document.getElementById('calendarPopup');
@@ -867,7 +1508,11 @@ function clearDateRange() {
 function applyDateRange() {
     if (selectedFromDate && selectedToDate) {
         updatePeriodDisplay();
+        updateAllDateFormFields(); // Using the updated function from second block
         toggleCalendar();
+        
+        // Load payroll data automatically
+        loadPayrollData();
     } else {
         alert('Please select both start and end dates');
     }
@@ -899,7 +1544,10 @@ function updateDateRangeDisplay() {
 }
 
 function formatDateForInput(date) {
-    return date.toISOString().split('T')[0];
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
 }
 
 function formatDateForDisplay(date) {
@@ -919,6 +1567,40 @@ function updatePeriodDisplay() {
         periodDisplay.textContent = `${formatDateForDisplay(selectedFromDate)} - Select end date`;
     } else {
         periodDisplay.textContent = 'Select date range';
+    }
+}
+
+// Updated function from second block
+function updateAllDateFormFields() {
+    if (selectedFromDate && selectedToDate) {
+        const fromDate = formatDateForInput(selectedFromDate);
+        const toDate = formatDateForInput(selectedToDate);
+        
+        // Update ALL form fields
+        const fields = [
+            'bulkStartDate', 'bulkEndDate',
+            'paymentStartDate', 'paymentEndDate',
+            'payslipStartDate', 'payslipEndDate',
+            'exportStartDate', 'exportEndDate'
+        ];
+        
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                if (fieldId.includes('StartDate')) {
+                    field.value = fromDate;
+                } else if (fieldId.includes('EndDate')) {
+                    field.value = toDate;
+                }
+            }
+        });
+        
+        // Update debug info
+        document.getElementById('debugStartDate').textContent = fromDate;
+        document.getElementById('debugEndDate').textContent = toDate;
+        
+        // Check approved payrolls
+        checkApprovedPayrolls(fromDate, toDate);
     }
 }
 
@@ -1030,6 +1712,29 @@ function generateEmployeeCardHTML(employee) {
     `;
 }
 
+function sortBy(field) {
+    let url = new URL(window.location.href);
+    
+    // Remove page parameter
+    url.searchParams.delete('page');
+    
+    // Set sort parameter
+    url.searchParams.set('sort', field);
+    
+    // If clicking same field, toggle order
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order');
+    
+    if (currentSort === field && currentOrder === 'desc') {
+        url.searchParams.set('order', 'asc');
+    } else {
+        url.searchParams.set('order', 'desc');
+    }
+    
+    window.location.href = url.toString();
+    document.getElementById('sortDropdown').classList.add('hidden');
+}
+
 function changeEmployeePage(direction) {
     const totalPages = Math.ceil(allEmployees.length / employeesPerPage);
     const newPage = currentEmployeePage + direction;
@@ -1093,7 +1798,706 @@ function updatePaginationControls() {
     }
 }
 
-// Initialize calendar
+// Generate Payroll Function
+function generatePayroll() {
+    if (!selectedFromDate || !selectedToDate) {
+        alert('Please select a date range first');
+        return;
+    }
+    
+    if (!confirm(`Generate payroll for period ${formatDateForDisplay(selectedFromDate)} to ${formatDateForDisplay(selectedToDate)}?`)) {
+        return;
+    }
+    
+    // Set dates in form
+    document.getElementById('generateStartDate').value = formatDateForInput(selectedFromDate);
+    document.getElementById('generateEndDate').value = formatDateForInput(selectedToDate);
+    
+    // Submit form
+    document.getElementById('generatePayrollForm').submit();
+}
+
+// Filter and Sort Functions
+function toggleFilterDropdown() {
+    const dropdown = document.getElementById('filterDropdown');
+    dropdown.classList.toggle('hidden');
+    
+    // Close sort dropdown if open
+    const sortDropdown = document.getElementById('sortDropdown');
+    sortDropdown.classList.add('hidden');
+}
+
+function toggleSortDropdown() {
+    const dropdown = document.getElementById('sortDropdown');
+    dropdown.classList.toggle('hidden');
+    
+    // Close filter dropdown if open
+    const filterDropdown = document.getElementById('filterDropdown');
+    filterDropdown.classList.add('hidden');
+}
+
+function applyFilters() {
+    const status = document.getElementById('filterStatus').value;
+    const department = document.getElementById('filterDepartment').value;
+    
+    let url = new URL(window.location.href);
+    
+    if (status) {
+        url.searchParams.set('status', status);
+    } else {
+        url.searchParams.delete('status');
+    }
+    
+    if (department) {
+        url.searchParams.set('department', department);
+    } else {
+        url.searchParams.delete('department');
+    }
+    
+    url.searchParams.delete('page');
+    
+    window.location.href = url.toString();
+}
+
+function clearFilters() {
+    let url = new URL(window.location.href);
+    url.searchParams.delete('status');
+    url.searchParams.delete('department');
+    url.searchParams.delete('page');
+    window.location.href = url.toString();
+}
+
+function sortBy(field) {
+    let url = new URL(window.location.href);
+    const currentSort = url.searchParams.get('sort');
+    const currentOrder = url.searchParams.get('order');
+    
+    if (currentSort === field) {
+        url.searchParams.set('order', currentOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+        url.searchParams.set('sort', field);
+        url.searchParams.set('order', 'asc');
+    }
+    
+    url.searchParams.delete('page');
+    
+    window.location.href = url.toString();
+    document.getElementById('sortDropdown').classList.add('hidden');
+}
+
+// Add this function to update all date fields
+function updateAllDateFields() {
+    if (selectedFromDate && selectedToDate) {
+        const fromDate = formatDateForInput(selectedFromDate);
+        const toDate = formatDateForInput(selectedToDate);
+        
+        // Update all date fields
+        const allDateFields = [
+            'generateStartDate', 'generateEndDate',
+            'bulkStartDate', 'bulkEndDate',
+            'paymentStartDate', 'paymentEndDate',
+            'payslipStartDate', 'payslipEndDate',
+            'exportStartDate', 'exportEndDate',
+            'workflowStartDate', 'workflowEndDate'
+        ];
+        
+        allDateFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                if (fieldId.includes('StartDate')) {
+                    field.value = fromDate;
+                } else if (fieldId.includes('EndDate')) {
+                    field.value = toDate;
+                }
+            }
+        });
+    }
+}
+
+// Call this function whenever you update the date range
+function applyDateRange() {
+    if (selectedFromDate && selectedToDate) {
+        updatePeriodDisplay();
+        updateAllDateFields();
+        toggleCalendar();
+        
+        // Load payroll data automatically
+        loadPayrollData();
+    } else {
+        alert('Please select both start and end dates');
+    }
+}
+
+// Payment Modal Functions
+let selectedEmployees = new Set();
+let employeeData = {};
+
+function openPaymentModal() {
+    if (!selectedFromDate || !selectedToDate) {
+        alert('Please select a date range first');
+        return;
+    }
+    
+    // Update modal period display
+    document.getElementById('paymentPeriodDisplay').textContent = 
+        `${formatDateForDisplay(selectedFromDate)} - ${formatDateForDisplay(selectedToDate)}`;
+    
+    // Load approved payrolls
+    loadApprovedPayrolls();
+    
+    // Show modal
+    document.getElementById('paymentModal').classList.remove('hidden');
+}
+
+function closePaymentModal() {
+    document.getElementById('paymentModal').classList.add('hidden');
+    selectedEmployees.clear();
+    updateSelectionDisplay();
+}
+
+function loadApprovedPayrolls() {
+    const employeeList = document.getElementById('employeeList');
+    employeeList.innerHTML = '<div class="text-center py-4"><i class="fas fa-spinner fa-spin text-blue-600"></i><p class="mt-2 text-sm text-gray-500">Loading approved payrolls...</p></div>';
+    
+    const fromDate = formatDateForInput(selectedFromDate);
+    const toDate = formatDateForInput(selectedToDate);
+    
+    const url = `/ajax/payrolls/approved?start_date=${fromDate}&end_date=${toDate}`;
+    
+    fetch(url, {
+        headers: {
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || ''
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        employeeData = {};
+        selectedEmployees.clear();
+        
+        if (data.length === 0) {
+            employeeList.innerHTML = '<div class="text-center py-4 text-yellow-500">No approved payrolls found for this period.</div>';
+            return;
+        }
+        
+        let html = '';
+        data.forEach(payroll => {
+            employeeData[payroll.employee_id] = {
+                id: payroll.employee_id,
+                name: payroll.employee_name,
+                net_pay: payroll.net_pay,
+                payroll_id: payroll.id
+            };
+            
+            html += `
+                <div class="flex items-center justify-between p-2 hover:bg-gray-50 rounded">
+                    <div class="flex items-center">
+                        <input type="checkbox" 
+                               id="emp_${payroll.employee_id}" 
+                               value="${payroll.employee_id}"
+                               onchange="toggleEmployee(${payroll.employee_id})"
+                               class="h-4 w-4 text-blue-600 border-gray-300 rounded">
+                        <label for="emp_${payroll.employee_id}" class="ml-2">
+                            <div class="font-medium text-gray-900">${payroll.employee_name}</div>
+                            <div class="text-xs text-gray-500">ID: ${payroll.employee_code || payroll.employee_id}</div>
+                        </label>
+                    </div>
+                    <div class="text-right">
+                        <div class="font-medium text-green-600">₱${parseFloat(payroll.net_pay).toLocaleString('en-US', {minimumFractionDigits: 2})}</div>
+                        <div class="text-xs text-gray-500">Net Pay</div>
+                    </div>
+                </div>
+            `;
+        });
+        
+        employeeList.innerHTML = html;
+        updateSelectionDisplay();
+    })
+    .catch(error => {
+        console.error('Error loading payrolls:', error);
+        employeeList.innerHTML = '<div class="text-center py-4 text-red-500">Error loading payroll data.</div>';
+    });
+}
+
+// Set export format
+function setExportFormat(format) {
+    const formatInput = document.querySelector('input[name="format"]');
+    if (formatInput) {
+        formatInput.value = format;
+    }
+    
+    const button = document.querySelector('#exportForm button[type="submit"]');
+    if (button) {
+        const formatText = format === 'xlsx' ? 'Excel' : 'CSV';
+        const icon = format === 'xlsx' ? 'fa-file-excel' : 'fa-file-csv';
+        button.innerHTML = `<i class="fas ${icon} mr-2"></i>Export to ${formatText}`;
+    }
+    
+    // Submit form after a brief delay
+    setTimeout(() => {
+        if (confirm(`Export payroll data to ${format.toUpperCase()}?`)) {
+            document.getElementById('exportForm').submit();
+        }
+    }, 100);
+}
+
+// Generate Payslips function
+function generatePayslips() {
+    const startDate = document.getElementById('payslipStartDate').value;
+    const endDate = document.getElementById('payslipEndDate').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select a date range first.');
+        return;
+    }
+    
+    if (confirm(`Generate payslips for period ${formatDateForDisplay(new Date(startDate))} to ${formatDateForDisplay(new Date(endDate))}?`)) {
+        // Submit the form
+        document.getElementById('payslipForm').submit();
+    }
+}
+
+function toggleAllEmployees() {
+    const selectAll = document.getElementById('selectAllEmployees');
+    const checkboxes = document.querySelectorAll('#employeeList input[type="checkbox"]');
+    
+    if (selectAll.checked) {
+        Object.keys(employeeData).forEach(id => {
+            selectedEmployees.add(parseInt(id));
+        });
+        checkboxes.forEach(cb => cb.checked = true);
+    } else {
+        selectedEmployees.clear();
+        checkboxes.forEach(cb => cb.checked = false);
+    }
+    
+    updateSelectionDisplay();
+}
+
+function toggleEmployee(employeeId) {
+    const checkbox = document.getElementById(`emp_${employeeId}`);
+    
+    if (checkbox.checked) {
+        selectedEmployees.add(employeeId);
+    } else {
+        selectedEmployees.delete(employeeId);
+    }
+    
+    const selectAll = document.getElementById('selectAllEmployees');
+    selectAll.checked = selectedEmployees.size === Object.keys(employeeData).length;
+    
+    updateSelectionDisplay();
+}
+
+function updateSelectionDisplay() {
+    const selectedCount = selectedEmployees.size;
+    document.getElementById('selectedCount').textContent = `${selectedCount} employees selected`;
+    
+    let total = 0;
+    selectedEmployees.forEach(id => {
+        if (employeeData[id]) {
+            total += parseFloat(employeeData[id].net_pay);
+        }
+    });
+    
+    document.getElementById('totalAmount').textContent = `₱${total.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+}
+
+function processSelectedPayments() {
+    if (selectedEmployees.size === 0) {
+        alert('Please select at least one employee to process payment.');
+        return;
+    }
+    
+    if (!confirm(`Process payments for ${selectedEmployees.size} employee(s) with total amount of ${document.getElementById('totalAmount').textContent}?`)) {
+        return;
+    }
+    
+    const fromDate = formatDateForInput(selectedFromDate);
+    const toDate = formatDateForInput(selectedToDate);
+    const paymentMethod = document.getElementById('paymentMethod').value;
+    const notes = document.getElementById('paymentNotes').value;
+    const employeeIds = Array.from(selectedEmployees);
+    
+    const processBtn = document.querySelector('#paymentModal button[onclick="processSelectedPayments()"]');
+    const originalText = processBtn.innerHTML;
+    processBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    processBtn.disabled = true;
+    
+    fetch('/ajax/payrolls/process-payments', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify({
+            start_date: fromDate,
+            end_date: toDate,
+            employee_ids: employeeIds,
+            payment_method: paymentMethod,
+            notes: notes
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showNotification(`Successfully processed ${data.processed} payments!`, 'success');
+            closePaymentModal();
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+        } else {
+            showNotification(`Error: ${data.message}`, 'error');
+            processBtn.innerHTML = originalText;
+            processBtn.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showNotification('Error processing payments. Please try again.', 'error');
+        processBtn.innerHTML = originalText;
+        processBtn.disabled = false;
+    });
+}
+
+// OLD APPROVE FUNCTION - RENAME THIS
+function approveAllPendingOld() {
+    const startDate = document.getElementById('bulkStartDate').value;
+    const endDate = document.getElementById('bulkEndDate').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select a date range first');
+        return;
+    }
+    
+    if (!confirm(`Approve all pending payrolls for period ${formatDateForDisplay(selectedFromDate)} to ${formatDateForDisplay(selectedToDate)}?`)) {
+        return;
+    }
+    
+    const button = event.target;
+    const originalText = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Approving...';
+    button.disabled = true;
+    
+    // Submit the form
+    document.getElementById('approveForm').submit();
+}
+
+// Process Payments Function - FIXED VERSION
+async function processPayments() {
+    const button = document.getElementById('processPaymentsBtn');
+    const originalText = button.innerHTML;
+    
+    try {
+        // Get date values
+        const startDate = document.getElementById('paymentStartDate').value;
+        const endDate = document.getElementById('paymentEndDate').value;
+        
+        if (!startDate || !endDate) {
+            alert('Please select a date range first.');
+            return;
+        }
+        
+        // Show loading state
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+        button.disabled = true;
+        
+        // Get payroll status counts
+        const statusResponse = await fetch(`/ajax/payrolls/status-count?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
+        const statusData = await statusResponse.json();
+        
+        const approvedCount = statusData.approved || 0;
+        const pendingCount = statusData.pending || 0;
+        
+        if (approvedCount === 0 && pendingCount === 0) {
+            button.innerHTML = originalText;
+            button.disabled = false;
+            alert('No approved or pending payrolls found for this period. Please generate payroll first.');
+            return;
+        }
+        
+        if (approvedCount === 0 && pendingCount > 0) {
+            const confirmApprove = confirm(`No approved payrolls found. Found ${pendingCount} pending payroll(s). Do you want to approve them first and then process payments?`);
+            
+            if (confirmApprove) {
+                // Approve pending payrolls first
+                const approveResponse = await fetch('/ajax/payrolls/approve-all', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        start_date: startDate,
+                        end_date: endDate
+                    })
+                });
+                
+                const approveResult = await approveResponse.json();
+                
+                if (approveResult.success && approveResult.approved_count > 0) {
+                    // Wait a moment and check again
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                    
+                    // Now process payments
+                    if (confirm(`Successfully approved ${approveResult.approved_count} payroll(s). Now process payments?`)) {
+                        // Submit the form to process payments
+                        document.getElementById('processPaymentsForm').submit();
+                    } else {
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
+                } else {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    alert('Failed to approve payrolls. Please try again.');
+                }
+            } else {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                alert('Cannot process payments without approved payrolls.');
+            }
+        } else if (approvedCount > 0) {
+            // We have approved payrolls, process them directly
+            if (confirm(`Process payments for ${approvedCount} approved payroll(s) for this period?`)) {
+                // Submit the form to process payments
+                document.getElementById('processPaymentsForm').submit();
+            } else {
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        alert('Error: ' + error.message);
+    }
+}
+
+// Submit payment processing
+async function submitPaymentProcess(startDate, endDate) {
+    // Submit the form directly - the backend will handle the rest
+    document.getElementById('processPaymentsForm').submit();
+}
+
+// Check pending payrolls (helper function)
+async function checkPendingPayrolls(startDate, endDate) {
+    try {
+        const response = await fetch(`/ajax/payrolls/pending?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
+        if (response.ok) {
+            const data = await response.json();
+            return data.length;
+        }
+        return 0;
+    } catch (error) {
+        console.error('Error checking pending payrolls:', error);
+        return 0;
+    }
+}
+
+// Approve all pending payrolls via AJAX
+async function approveAllPendingAJAX(startDate, endDate) {
+    try {
+        const response = await fetch(`/ajax/payrolls/approve-all`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            return result.approved_count;
+        } else {
+            throw new Error(result.message || 'Failed to approve payrolls');
+        }
+    } catch (error) {
+        console.error('Error approving payrolls:', error);
+        throw error;
+    }
+}
+
+// Approve All Pending with confirmation and auto-refresh
+async function approveAllPendingWithConfirmation() {
+    const button = document.getElementById('approveAllPendingBtn');
+    const originalText = button.innerHTML;
+    
+    try {
+        // Get date values - FIXED: using the right IDs
+        const startDate = document.getElementById('bulkStartDate').value;
+        const endDate = document.getElementById('bulkEndDate').value;
+        
+        if (!startDate || !endDate) {
+            alert('Please select a date range first.');
+            return;
+        }
+        
+        // Check pending payrolls count
+        const pendingCount = await checkPendingPayrolls(startDate, endDate);
+        
+        if (pendingCount === 0) {
+            alert('No pending payrolls found for this period.');
+            return;
+        }
+        
+        // Show loading state
+        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Approving...';
+        button.disabled = true;
+        
+        // Get confirmation
+        if (confirm(`Approve ${pendingCount} pending payroll(s) for period ${formatDateForDisplay(new Date(startDate))} to ${formatDateForDisplay(new Date(endDate))}?`)) {
+            // Use the AJAX function (UPDATED)
+            const approvedCount = await approveAllPendingAJAX(startDate, endDate);
+            
+            if (approvedCount > 0) {
+                // Success - reload the page to show updated status
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } else {
+                alert('No payrolls were approved. Please try again.');
+                button.innerHTML = originalText;
+                button.disabled = false;
+            }
+        } else {
+            // User cancelled
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+        
+    } catch (error) {
+        console.error('Error:', error);
+        button.innerHTML = originalText;
+        button.disabled = false;
+        alert('Error: ' + error.message);
+    }
+}
+
+// New function to check payroll status
+async function checkPayrollStatus(startDate, endDate) {
+    try {
+        const response = await fetch(`/ajax/payrolls/status-count?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
+        const data = await response.json();
+        
+        return {
+            approvedCount: data.approved || 0,
+            pendingCount: data.pending || 0,
+            paidCount: data.paid || 0
+        };
+    } catch (error) {
+        console.error('Error checking payroll status:', error);
+        return { approvedCount: 0, pendingCount: 0, paidCount: 0 };
+    }
+}
+
+// New function to approve pending payrolls
+async function approvePendingPayrolls(startDate, endDate) {
+    try {
+        const response = await fetch('/ajax/payrolls/bulk-approve', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify({
+                start_date: startDate,
+                end_date: endDate
+            })
+        });
+        
+        const data = await response.json();
+        return data.approved || 0;
+    } catch (error) {
+        console.error('Error approving payrolls:', error);
+        return 0;
+    }
+}
+
+// Function to submit payment process
+async function submitPaymentProcess(startDate, endDate) {
+    const button = document.getElementById('processPaymentsBtn');
+    button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+    button.disabled = true;
+    
+    // Submit the form
+    document.getElementById('processPaymentsForm').submit();
+}
+
+// Check approved payrolls (from second block)
+async function checkApprovedPayrolls(startDate, endDate) {
+    try {
+        const response = await fetch(`/ajax/payrolls/approved?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
+        const data = await response.json();
+        
+        // Update debug info
+        document.getElementById('debugApprovedCount').textContent = data.length;
+        document.getElementById('debugStartDate').textContent = startDate;
+        document.getElementById('debugEndDate').textContent = endDate;
+        
+        return data.length;
+    } catch (error) {
+        console.error('Error checking approved payrolls:', error);
+        return 0;
+    }
+}
+
+// Test function (from second block)
+async function testPaymentProcessing() {
+    console.log('Testing payment processing...');
+    
+    // Test 1: Check route
+    console.log('Route URL:', "{{ route('payrolls.process-payments') }}");
+    
+    // Test 2: Check form values
+    const startDate = document.getElementById('paymentStartDate').value;
+    const endDate = document.getElementById('paymentEndDate').value;
+    console.log('Start Date:', startDate);
+    console.log('End Date:', endDate);
+    
+    // Test 3: Check approved payrolls
+    const count = await checkApprovedPayrolls(startDate, endDate);
+    alert(`Found ${count} approved payroll(s) for the selected period.`);
+    
+    // Test 4: Try to submit form directly
+    console.log('Form HTML:', document.getElementById('processPaymentsForm').outerHTML);
+}
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e) {
+    const filterBtn = document.querySelector('[onclick="toggleFilterDropdown()"]');
+    const sortBtn = document.querySelector('[onclick="toggleSortDropdown()"]');
+    const filterDropdown = document.getElementById('filterDropdown');
+    const sortDropdown = document.getElementById('sortDropdown');
+    
+    if (filterDropdown && !filterBtn.contains(e.target) && !filterDropdown.contains(e.target)) {
+        filterDropdown.classList.add('hidden');
+    }
+    
+    if (sortDropdown && !sortBtn.contains(e.target) && !sortDropdown.contains(e.target)) {
+        sortDropdown.classList.add('hidden');
+    }
+});
+
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize with current month
     setDateRange('thisMonth');
@@ -1107,10 +2511,18 @@ document.addEventListener('DOMContentLoaded', function() {
         const calendarPopup = document.getElementById('calendarPopup');
         const dateRangeButton = document.getElementById('dateRangeButton');
         
-        if (!calendarPopup.contains(e.target) && !dateRangeButton.contains(e.target)) {
+        if (calendarPopup && !calendarPopup.contains(e.target) && 
+            dateRangeButton && !dateRangeButton.contains(e.target)) {
             calendarPopup.classList.add('hidden');
         }
     });
+    
+    // Check approved payrolls on page load
+    const startDate = document.getElementById('paymentStartDate').value;
+    const endDate = document.getElementById('paymentEndDate').value;
+    if (startDate && endDate) {
+        checkApprovedPayrolls(startDate, endDate);
+    }
 });
 </script>
 @endsection

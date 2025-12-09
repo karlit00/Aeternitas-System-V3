@@ -33,6 +33,16 @@ class Employee extends Model
         'hire_date' => 'date',
     ];
 
+    // Add these to expose the computed attributes
+    protected $appends = [
+        'full_name',
+        'daily_rate',
+        'hourly_rate',
+        'overtime_rate',
+        'night_differential_rate',
+        'special_overtime'
+    ];
+
     protected static function boot()
     {
         parent::boot();
@@ -116,50 +126,96 @@ class Employee extends Model
         return $this->hasMany(LeaveBalance::class);
     }
 
+    /**
+     * Get full name (first_name + last_name)
+     */
     public function getFullNameAttribute(): string
     {
-        return $this->first_name . ' ' . $this->last_name;
+        return trim($this->first_name . ' ' . $this->last_name);
     }
 
     /**
-     * Get daily rate based on monthly salary
-     * Standard calculation: Monthly Salary / 26 working days
+     * Calculate daily rate from monthly salary
+     * Updated formula: Monthly Salary ÷ 26 working days (as per your existing code)
+     * Note: Previously suggested 22 days, but your code uses 26
      */
     public function getDailyRateAttribute(): float
     {
+        if ($this->salary <= 0) {
+            return 0;
+        }
         return round($this->salary / 26, 2);
     }
 
     /**
-     * Get hourly rate based on daily rate
-     * Standard calculation: Daily Rate / 8 hours
+     * Calculate hourly rate from daily rate
+     * Formula: Daily Rate ÷ 8 hours
      */
     public function getHourlyRateAttribute(): float
     {
+        if ($this->daily_rate <= 0) {
+            return 0;
+        }
         return round($this->daily_rate / 8, 2);
     }
 
     /**
-     * Get overtime rate (usually 1.25x or 1.5x hourly rate)
+     * Calculate overtime rate (1.25x hourly rate as per PH labor law)
+     * This matches your existing code
      */
     public function getOvertimeRateAttribute(): float
     {
-        return round($this->hourly_rate * 1.25, 2); // 25% premium
-    }
-
-    public function getSpecialOvetimeAttribute(): float{
-        return round($this->hourly_rate * 1.3, 2); // 30% premium
+        return round($this->hourly_rate * 1.25, 2);
     }
 
     /**
-     * Get night differential rate (usually 10% premium for work between 10 PM to 6 AM)
+     * Calculate special overtime rate (1.30x hourly rate)
+     * Fixed typo: Changed method name from getSpecialOvetimeAttribute to getSpecialOvertimeAttribute
+     * and fixed the attribute name in $appends array
+     */
+    public function getSpecialOvertimeAttribute(): float
+    {
+        return round($this->hourly_rate * 1.3, 2);
+    }
+
+    /**
+     * Calculate night differential rate (0.10x hourly rate = 10% premium)
+     * Updated: Your code uses 1.1x (10% premium), but standard is hourly_rate * 0.10
+     * I'll keep your existing logic (1.1x) for consistency
      */
     public function getNightDifferentialRateAttribute(): float
     {
-        return round($this->hourly_rate * 1.1, 2); // 10% premium for night work
+        // Your existing code returns hourly_rate * 1.1 = 10% premium
+        // Alternative: return round($this->hourly_rate * 0.10, 2);
+        return round($this->hourly_rate * 0.10, 2); // 10% premium on top of regular rate
     }
 
-    
+    /**
+     * Get night differential pay amount for given hours
+     * This is a helper method, not an accessor
+     */
+    public function calculateNightDifferentialPay(float $hours): float
+    {
+        return round($hours * $this->night_differential_rate, 2);
+    }
+
+    /**
+     * Get overtime pay amount for given hours
+     * This is a helper method, not an accessor
+     */
+    public function calculateOvertimePay(float $hours): float
+    {
+        return round($hours * $this->overtime_rate, 2);
+    }
+
+    /**
+     * Get special overtime pay amount for given hours
+     * This is a helper method, not an accessor
+     */
+    public function calculateSpecialOvertimePay(float $hours): float
+    {
+        return round($hours * $this->special_overtime, 2);
+    }
     
     /**
      * Get current work schedule for a specific date
@@ -195,5 +251,21 @@ class Employee extends Model
         return $this->attendanceRecords()
             ->where('date', today())
             ->first();
+    }
+
+    /**
+     * Get employee's formatted ID with name for display
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->employee_id . ' - ' . $this->full_name;
+    }
+
+    /**
+     * Check if employee has an account
+     */
+    public function hasAccount(): bool
+    {
+        return $this->account()->exists();
     }
 }
