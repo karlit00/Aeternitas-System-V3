@@ -3,27 +3,19 @@
 @section('title', 'Tax Brackets Management')
 
 @section('content')
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Tax Brackets</h1>
-            <p class="mt-1 text-sm text-gray-500">Manage income tax brackets and rates for payroll calculations</p>
-        </div>
-        <div class="mt-4 sm:mt-0 flex space-x-3">
-            <a href="{{ route('tax-brackets.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <i class="fas fa-plus mr-2"></i>
-                Add Tax Bracket
-            </a>
-            <form method="POST" action="{{ route('tax-brackets.philippine') }}" class="inline">
-                @csrf
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                    <i class="fas fa-flag mr-2"></i>
-                    Load Philippine Tax Brackets
-                </button>
-            </form>
-        </div>
-    </div>
+<x-page-header 
+    title="Tax Brackets"
+    description="Manage income tax brackets and rates for payroll calculations"
+    :actions="[
+        ['type' => 'link', 'label' => 'Add Tax Bracket', 'href' => route('tax-brackets.create'), 'icon' => 'plus', 'variant' => 'primary'],
+        ['type' => 'button', 'label' => 'Load Philippine Tax Brackets', 'icon' => 'flag', 'variant' => 'secondary', 'onclick' => 'document.getElementById(\'loadPhilTaxForm\').submit()']
+    ]"
+>
+
+    <form id="loadPhilTaxForm" method="POST" action="{{ route('tax-brackets.philippine') }}" class="hidden">
+        @csrf
+    </form>
+
         @if(session('success'))
             <div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
                 <div class="flex">
@@ -278,5 +270,5 @@ function closeDeleteModal() {
             </div>
         </div>
     </div>
-</div>
+</x-page-header>
 @endsection

@@ -3,20 +3,13 @@
 @section('title', 'Positions')
 
 @section('content')
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Positions</h1>
-            <p class="mt-1 text-sm text-gray-600">Manage company positions and job roles</p>
-        </div>
-        <div class="mt-4 sm:mt-0">
-            <a href="{{ route('positions.create') }}" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <i class="fas fa-plus mr-2"></i>
-                Add Position
-            </a>
-        </div>
-    </div>
+<x-page-header 
+    title="Positions"
+    description="Manage company positions and job roles"
+    :actions="[
+        ['type' => 'link', 'label' => 'Add Position', 'href' => route('positions.create'), 'icon' => 'plus', 'variant' => 'primary']
+    ]"
+>
 
     @if(session('success'))
         <div class="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -177,5 +170,5 @@
             </div>
         @endif
     </div>
-</div>
+</x-page-header>
 @endsection

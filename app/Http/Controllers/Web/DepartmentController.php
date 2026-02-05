@@ -77,7 +77,7 @@ class DepartmentController extends Controller
             'budget' => 'nullable|numeric|min:0',
         ]);
 
-        $department->update($request->all());
+        $department->update($request->validated());
 
         return redirect()->route('departments.index')
             ->with('success', 'Department updated successfully.');

@@ -213,7 +213,7 @@
                         </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-gray-200">
-                        <?php $__currentLoopData = $filteredEmployees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $employee): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <?php $__currentLoopData = $employees; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $employee): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <tr class="employee-row hover:bg-gray-50 transition-colors" data-employee-id="<?php echo e($employee->id); ?>">
                                 <td class="px-6 py-5 whitespace-nowrap border-r border-gray-200">
                                     <div class="flex items-center">

@@ -34,14 +34,14 @@ class OvertimeController extends Controller
         // For employees, only show their own requests
         if ($user->role === 'employee' && $user->employee) {
             $query->where('employee_id', $user->employee->id);
-            \Log::info('Employee viewing overtime records', [
+            Log::info('Employee viewing overtime records', [
                 'user_id' => $user->id,
                 'employee_id' => $user->employee->id,
                 'role' => $user->role,
                 'has_employee_relation' => $user->employee ? 'yes' : 'no'
             ]);
         } elseif ($user->role === 'employee' && !$user->employee) {
-            \Log::info('Employee without employee relation viewing records', [
+            Log::info('Employee without employee relation viewing records', [
                 'user_id' => $user->id,
                 'role' => $user->role
             ]);

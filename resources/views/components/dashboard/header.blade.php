@@ -306,11 +306,158 @@
             </div>
             @endif
             
-            <!-- Messages - Hidden on small mobile -->
-            <button class="relative p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors hidden sm:block">
-                <i class="fas fa-envelope text-lg sm:text-xl"></i>
-                <span class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 block h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-blue-500 text-white text-xs flex items-center justify-center">2</span>
-            </button>
+            <!-- Inbox Popup - Only show for HR and Admin -->
+            @if(in_array($user->role, ['admin', 'hr']))
+            <div class="relative" x-data="{
+                open: false,
+                messages: [],
+                pendingCount: 0,
+                loading: false,
+                
+                init() {
+                    this.loadMessages();
+                    // Refresh every 30 seconds
+                    setInterval(() => {
+                        if (!this.open) {
+                            this.loadMessages();
+                        }
+                    }, 30000);
+                },
+                
+                toggleMessages() {
+                    this.open = !this.open;
+                    if (this.open) {
+                        this.loadMessages();
+                    }
+                },
+                
+                async loadMessages() {
+                    this.loading = true;
+                    try {
+                        const response = await fetch('/api/hr/inbox', {
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error('Failed to load messages');
+                        }
+                        
+                        const data = await response.json();
+                        this.messages = data.messages || [];
+                        this.pendingCount = data.pending_count || 0;
+                    } catch (error) {
+                        console.error('Error loading messages:', error);
+                        this.messages = [];
+                        this.pendingCount = 0;
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }">
+                <button @click="toggleMessages()" 
+                        :class="{'bg-gray-100': open}"
+                        class="relative p-1.5 sm:p-2 text-gray-500 hover:text-gray-700 rounded-lg hover:bg-gray-100 transition-colors">
+                    <i class="fas fa-inbox text-lg sm:text-xl"></i>
+                    <template x-if="pendingCount > 0">
+                        <span x-text="pendingCount > 99 ? '99+' : pendingCount" 
+                              class="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 block h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-indigo-500 text-white text-xs flex items-center justify-center animate-pulse"></span>
+                    </template>
+                </button>
+                
+                <!-- Inbox Dropdown -->
+                <div x-show="open" 
+                     x-cloak
+                     @click.away="open = false"
+                     x-transition:enter="transition ease-out duration-100"
+                     x-transition:enter-start="transform opacity-0 scale-95"
+                     x-transition:enter-end="transform opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-75"
+                     x-transition:leave-start="transform opacity-100 scale-100"
+                     x-transition:leave-end="transform opacity-0 scale-95"
+                     class="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-lg shadow-xl border border-gray-200 py-2 z-50 max-h-[80vh] overflow-hidden flex flex-col">
+                    
+                    <!-- Header -->
+                    <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-white">
+                        <div>
+                            <h3 class="text-sm font-semibold text-gray-900">Employee Messages</h3>
+                            <p class="text-xs text-gray-500 mt-0.5" x-text="pendingCount + ' Pending'"></p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span x-show="loading" class="text-xs text-gray-500">
+                                <i class="fas fa-spinner fa-spin mr-1"></i>
+                            </span>
+                            <button @click="loadMessages()" class="text-xs text-indigo-600 hover:text-indigo-800 p-1">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Messages List -->
+                    <div class="flex-1 overflow-y-auto">
+                        <template x-if="messages.length === 0 && !loading">
+                            <div class="px-4 py-8 text-center">
+                                <i class="fas fa-inbox text-gray-300 text-3xl mb-2"></i>
+                                <p class="text-sm text-gray-500">No messages</p>
+                                <p class="text-xs text-gray-400 mt-1">Employee messages will appear here</p>
+                            </div>
+                        </template>
+                        
+                        <template x-if="loading">
+                            <div class="px-4 py-8 text-center">
+                                <div class="inline-block">
+                                    <i class="fas fa-spinner fa-spin text-indigo-600 text-2xl"></i>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-2">Loading messages...</p>
+                            </div>
+                        </template>
+                        
+                        <template x-for="message in messages" :key="message.id">
+                            <a :href="'/hr/contact/' + message.id" 
+                               class="block px-4 py-3 border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <div class="w-8 h-8 rounded-full bg-gradient-to-r from-indigo-100 to-indigo-50 flex items-center justify-center shadow-sm">
+                                            <i class="fas fa-envelope text-indigo-600 text-sm"></i>
+                                        </div>
+                                    </div>
+                                    <div class="ml-3 flex-1 min-w-0">
+                                        <div class="flex items-start justify-between">
+                                            <p class="text-sm font-medium text-gray-900 truncate" x-text="message.sender_name"></p>
+                                            <span class="text-xs text-gray-400 ml-2 flex-shrink-0" x-text="message.time_ago"></span>
+                                        </div>
+                                        <p class="text-xs text-gray-600 mt-0.5 truncate" x-text="message.subject"></p>
+                                        <div class="flex items-center mt-1 space-x-2">
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium" :class="{
+                                                'bg-yellow-100 text-yellow-800': message.status === 'pending',
+                                                'bg-blue-100 text-blue-800': message.status === 'in_progress',
+                                                'bg-green-100 text-green-800': message.status === 'resolved',
+                                                'bg-gray-100 text-gray-800': message.status === 'closed'
+                                            }" x-text="message.status_label"></span>
+                                            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800" x-text="message.category_label"></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </a>
+                        </template>
+                    </div>
+                    
+                    <!-- Footer -->
+                    <div class="px-4 py-2 border-t border-gray-100 bg-gray-50">
+                        <a href="{{ route('hr.contacts.admin') }}" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center gap-1">
+                            View All Messages
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            @else
+            <!-- Empty placeholder for non-HR/Admin users -->
+            <div class="p-1.5 sm:p-2 text-gray-300">
+                <i class="fas fa-inbox text-lg sm:text-xl"></i>
+            </div>
+            @endif
             
             <!-- User Menu Dropdown -->
             <div class="relative" x-data="{ open: false }">

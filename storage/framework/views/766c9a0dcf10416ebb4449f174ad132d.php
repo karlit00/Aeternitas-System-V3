@@ -348,10 +348,16 @@ unset($__defined_vars, $__key, $__value); ?>
             </a>
 
             <!-- Contact HR -->
-            <button onclick="contactHR()" class="w-full flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+            <a href="<?php echo e(route('hr.contact.index')); ?>" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
                 <i class="fas fa-question-circle mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
                 <span>Contact HR</span>
-            </button>
+            </a>
+
+            <!-- Help & Support -->
+            <a href="<?php echo e(route('hr.help-support')); ?>" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+                <i class="fas fa-life-ring mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
+                <span>Help & Support</span>
+            </a>
         <?php endif; ?>
         
         <!-- Additional test items to ensure scrolling -->
@@ -377,9 +383,16 @@ unset($__defined_vars, $__key, $__value); ?>
             <span>Notifications</span>
         </a>
 
-        <a href="#" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
+        <a href="<?php echo e(route('hr.contacts.admin')); ?>" class="flex items-center px-4 py-3 text-sm font-medium <?php echo e($activeRoute === 'hr.contacts.admin' ? 'text-blue-600 bg-blue-50 border-r-4 border-blue-600' : 'text-gray-700 hover:bg-gray-50 hover:text-blue-600'); ?> rounded-lg transition-all duration-200 group">
+            <i class="fas fa-inbox mr-3 text-lg <?php echo e($activeRoute === 'hr.contacts.admin' ? 'text-blue-600' : 'text-gray-400 group-hover:text-blue-600'); ?>"></i>
+            <span>Inbox</span>
+            <span class="ml-auto text-xs font-semibold px-2 py-0.5 bg-green-500 text-white rounded-full">NEW</span>
+        </a>
+
+        <a href="<?php echo e(route('hr.help-support')); ?>" class="flex items-center px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-blue-600 rounded-lg transition-all duration-200 group">
             <i class="fas fa-question-circle mr-3 text-lg text-gray-400 group-hover:text-blue-600"></i>
             <span>Help & Support</span>
+            <span class="ml-auto text-xs font-semibold px-2 py-0.5 bg-green-500 text-white rounded-full">NEW</span>
         </a>
         <?php endif; ?>
     </div>
@@ -532,20 +545,6 @@ async function sidebarTimeOut() {
     }
 }
 
-// ============================================================
-// CONTACT HR FUNCTION (PLACEHOLDER)
-// ============================================================
-
-function contactHR() {
-    // Placeholder function - Add your Contact HR functionality here
-    alert('Contact HR functionality will be implemented here.\n\nThis could open a contact form, show HR contact information, or open a chat interface.');
-    
-    // Example of what you could do:
-    // 1. Open a modal with HR contact information
-    // 2. Show a form to send a message to HR
-    // 3. Open an email client with HR email pre-filled
-    // 4. Show HR office location and contact numbers
-}
 
 // Show success message
 function showSuccess(message) {

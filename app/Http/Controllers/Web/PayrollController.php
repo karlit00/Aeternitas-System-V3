@@ -336,7 +336,7 @@ public function checkDuplicatePayroll(Request $request)
             'tax_amount' => 'nullable|numeric|min:0',
         ]);
 
-        Payroll::create($request->all());
+        Payroll::create($request->validated());
 
         return redirect()->route('payrolls.index')
             ->with('success', 'Payroll created successfully.');
@@ -375,7 +375,7 @@ public function checkDuplicatePayroll(Request $request)
             'tax_amount' => 'nullable|numeric|min:0',
         ]);
 
-        $payroll->update($request->all());
+        $payroll->update($request->validated());
 
         return redirect()->route('payrolls.index')
             ->with('success', 'Payroll updated successfully.');

@@ -69,7 +69,7 @@ class TaxBracketController extends Controller
             'effective_until' => 'nullable|date|after:effective_from',
         ]);
 
-        TaxBracket::create($request->all());
+        TaxBracket::create($request->validated());
 
         return redirect()->route('tax-brackets.index')
             ->with('success', 'Tax bracket created successfully.');
@@ -112,7 +112,7 @@ class TaxBracketController extends Controller
             'effective_until' => 'nullable|date|after:effective_from',
         ]);
 
-        $taxBracket->update($request->all());
+        $taxBracket->update($request->validated());
 
         return redirect()->route('tax-brackets.index')
             ->with('success', 'Tax bracket updated successfully.');

@@ -3,27 +3,27 @@
 <?php $__env->startSection('title', 'Tax Brackets Management'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Tax Brackets</h1>
-            <p class="mt-1 text-sm text-gray-500">Manage income tax brackets and rates for payroll calculations</p>
-        </div>
-        <div class="mt-4 sm:mt-0 flex space-x-3">
-            <a href="<?php echo e(route('tax-brackets.create')); ?>" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <i class="fas fa-plus mr-2"></i>
-                Add Tax Bracket
-            </a>
-            <form method="POST" action="<?php echo e(route('tax-brackets.philippine')); ?>" class="inline">
-                <?php echo csrf_field(); ?>
-                <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 border border-transparent rounded-lg font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors">
-                    <i class="fas fa-flag mr-2"></i>
-                    Load Philippine Tax Brackets
-                </button>
-            </form>
-        </div>
-    </div>
+<?php if (isset($component)) { $__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.page-header','data' => ['title' => 'Tax Brackets','description' => 'Manage income tax brackets and rates for payroll calculations','actions' => [
+        ['type' => 'link', 'label' => 'Add Tax Bracket', 'href' => route('tax-brackets.create'), 'icon' => 'plus', 'variant' => 'primary'],
+        ['type' => 'button', 'label' => 'Load Philippine Tax Brackets', 'icon' => 'flag', 'variant' => 'secondary', 'onclick' => 'document.getElementById(\'loadPhilTaxForm\').submit()']
+    ]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('page-header'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Tax Brackets','description' => 'Manage income tax brackets and rates for payroll calculations','actions' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
+        ['type' => 'link', 'label' => 'Add Tax Bracket', 'href' => route('tax-brackets.create'), 'icon' => 'plus', 'variant' => 'primary'],
+        ['type' => 'button', 'label' => 'Load Philippine Tax Brackets', 'icon' => 'flag', 'variant' => 'secondary', 'onclick' => 'document.getElementById(\'loadPhilTaxForm\').submit()']
+    ])]); ?>
+
+    <form id="loadPhilTaxForm" method="POST" action="<?php echo e(route('tax-brackets.philippine')); ?>" class="hidden">
+        <?php echo csrf_field(); ?>
+    </form>
+
         <?php if(session('success')): ?>
             <div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4">
                 <div class="flex">
@@ -283,7 +283,16 @@ function closeDeleteModal() {
             </div>
         </div>
     </div>
-</div>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e)): ?>
+<?php $attributes = $__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e; ?>
+<?php unset($__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e)): ?>
+<?php $component = $__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e; ?>
+<?php unset($__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e); ?>
+<?php endif; ?>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.dashboard-base', ['user' => $user, 'activeRoute' => 'tax-brackets.index'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\internship\Aeternitas-System-V2\resources\views/tax-brackets/index.blade.php ENDPATH**/ ?>

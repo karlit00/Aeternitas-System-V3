@@ -22,7 +22,7 @@ class DepartmentController extends Controller
             'budget' => 'nullable|numeric|min:0',
         ]);
 
-        $department = Department::create($request->all());
+        $department = Department::create($request->validated());
 
         return response()->json($department, 201);
     }
@@ -41,7 +41,7 @@ class DepartmentController extends Controller
             'budget' => 'nullable|numeric|min:0',
         ]);
 
-        $department->update($request->all());
+        $department->update($request->validated());
 
         return response()->json($department);
     }

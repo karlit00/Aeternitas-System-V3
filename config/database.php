@@ -60,8 +60,8 @@ return [
             'engine' => null,
             'timezone' => '+08:00', // Philippine Time (UTC+8)
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone='+08:00'",
+                Pdo\Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                Pdo\Mysql::ATTR_INIT_COMMAND => "SET time_zone='+08:00'",
             ]) : [],
         ],
 
@@ -82,8 +82,8 @@ return [
             'engine' => null,
             'timezone' => '+08:00', // Philippine Time (UTC+8)
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
-                PDO::MYSQL_ATTR_INIT_COMMAND => "SET time_zone='+08:00'",
+                Pdo\Mysql::ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
+                Pdo\Mysql::ATTR_INIT_COMMAND => "SET time_zone='+08:00'",
             ]) : [],
         ],
 

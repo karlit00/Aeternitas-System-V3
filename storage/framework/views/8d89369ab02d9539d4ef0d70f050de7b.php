@@ -1,19 +1,20 @@
 <?php $__env->startSection('title', 'Companies'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-bold text-gray-900">Companies</h1>
-            <p class="text-gray-600">Manage company information and settings</p>
-        </div>
-        <a href="<?php echo e(route('companies.create')); ?>" class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-            <i class="fas fa-plus mr-2"></i>
-            Add Company
-        </a>
-    </div>
-
+<?php if (isset($component)) { $__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.page-header','data' => ['title' => 'Companies','description' => 'Manage company information and settings','actions' => [
+        ['type' => 'link', 'label' => 'Add Company', 'href' => route('companies.create'), 'icon' => 'plus', 'variant' => 'primary']
+    ]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('page-header'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Companies','description' => 'Manage company information and settings','actions' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
+        ['type' => 'link', 'label' => 'Add Company', 'href' => route('companies.create'), 'icon' => 'plus', 'variant' => 'primary']
+    ])]); ?>
     <!-- Companies List -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200">
         <div class="px-6 py-4 border-b border-gray-200">
@@ -165,7 +166,16 @@
             </div>
         <?php endif; ?>
     </div>
-</div>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e)): ?>
+<?php $attributes = $__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e; ?>
+<?php unset($__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e)): ?>
+<?php $component = $__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e; ?>
+<?php unset($__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e); ?>
+<?php endif; ?>
 
 <script>
 // Company switch handler

@@ -61,7 +61,7 @@ class PayrollController extends Controller
             'tax_amount' => 'nullable|numeric|min:0',
         ]);
 
-        $payroll = Payroll::create($request->all());
+        $payroll = Payroll::create($request->validated());
 
         return response()->json($payroll, 201);
     }
@@ -92,7 +92,7 @@ class PayrollController extends Controller
             'tax_amount' => 'nullable|numeric|min:0',
         ]);
 
-        $payroll->update($request->all());
+        $payroll->update($request->validated());
 
         return response()->json($payroll);
     }

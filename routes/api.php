@@ -20,11 +20,13 @@ use App\Http\Controllers\TaxBracketController;
 |
 */
 
-// Public routes
-Route::post('/auth/login', [AuthController::class, 'login']);
+// Public routes (rate limited - 10 login attempts per minute)
+Route::middleware('throttle:10,1')->group(function () {
+    Route::post('/auth/login', [AuthController::class, 'login']);
+});
 
-// Protected routes
-Route::middleware('auth:sanctum')->group(function () {
+// Protected routes (rate limited - 60 requests per minute)
+Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
     // Auth routes
     Route::post('/auth/logout', [AuthController::class, 'logout']);
     Route::get('/auth/user', [AuthController::class, 'user']);
@@ -61,4 +63,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/tax-brackets/calculate-range', [TaxBracketController::class, 'calculateRange']);
     Route::get('/tax-brackets/active', [TaxBracketController::class, 'getActiveBrackets']);
     Route::post('/tax-brackets/philippine', [TaxBracketController::class, 'createPhilippineBrackets']);
+
+    // HR Inbox endpoint
+    Route::get('/hr/inbox', [App\Http\Controllers\Api\HrInboxController::class, 'index']);
 });

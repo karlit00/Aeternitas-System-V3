@@ -46,7 +46,7 @@ class AttendanceController extends Controller
         
         // If user is an employee, restrict to ONLY their own records
         if ($isEmployee) {
-            \Log::info('Daily attendance access - Employee detected', [
+            Log::info('Daily attendance access - Employee detected', [
                 'user_id' => $user->id,
                 'user_email' => $user->email,
                 'user_role' => $user->role
@@ -61,7 +61,7 @@ class AttendanceController extends Controller
                     $employee = $user->employee;
                 }
             } catch (\Exception $e) {
-                \Log::warning('Employee relationship failed in daily()', ['error' => $e->getMessage()]);
+                Log::warning('Employee relationship failed in daily()', ['error' => $e->getMessage()]);
             }
             
             // Method 2: Try direct find if employee_id exists
@@ -78,13 +78,13 @@ class AttendanceController extends Controller
             
             if ($employee && $employee->id) {
                 $employeeIdForFilter = $employee->id;
-                \Log::info('Employee ID determined for daily filter', [
+                Log::info('Employee ID determined for daily filter', [
                     'employee_id' => $employeeIdForFilter,
                     'employee_name' => $employee->full_name ?? 'N/A'
                 ]);
             } else {
                 // If no employee found, return empty results
-                \Log::warning('Employee account has no linked employee record in daily()', [
+                Log::warning('Employee account has no linked employee record in daily()', [
                     'user_id' => $user->id,
                     'account_employee_id' => $user->employee_id
                 ]);
@@ -185,7 +185,7 @@ class AttendanceController extends Controller
             // Key by employee_id for easy lookup
             $attendanceRecords = $attendanceRecords->keyBy('employee_id');
             
-            \Log::info('Daily attendance records retrieved for employee', [
+            Log::info('Daily attendance records retrieved for employee', [
                 'employee_id' => $employeeIdForFilter,
                 'date_query_string' => $dateString,
                 'date_carbon' => $date->toDateString(),
@@ -275,7 +275,7 @@ class AttendanceController extends Controller
                       ($user->role === 'Employee');
         
         if ($isEmployee) {
-            \Log::info('Employee role detected - applying filter', [
+            Log::info('Employee role detected - applying filter', [
                 'user_id' => $user->id,
                 'role_checks' => [
                     'normalized' => $userRole === 'employee',
@@ -293,7 +293,7 @@ class AttendanceController extends Controller
                     $employee = $user->employee;
                 }
             } catch (\Exception $e) {
-                \Log::warning('Employee relationship failed', ['error' => $e->getMessage()]);
+                Log::warning('Employee relationship failed', ['error' => $e->getMessage()]);
             }
             
             // Method 2: Try direct find if employee_id exists
@@ -312,13 +312,13 @@ class AttendanceController extends Controller
                 // CRITICAL: Set the employee ID for filtering
                 // This ensures employees can NEVER see other employees' attendance records
                 $employeeIdForFilter = $employee->id;
-                \Log::info('Employee ID determined for filtering', [
+                Log::info('Employee ID determined for filtering', [
                     'employee_id' => $employeeIdForFilter,
                     'employee_name' => $employee->full_name ?? 'N/A'
                 ]);
             } else {
                 // If no employee found, return empty results with a message
-                \Log::warning('Employee account has no linked employee record', [
+                Log::warning('Employee account has no linked employee record', [
                     'user_id' => $user->id,
                     'account_employee_id' => $user->employee_id
                 ]);
@@ -331,7 +331,7 @@ class AttendanceController extends Controller
         // CRITICAL SAFETY CHECK: If user is an employee but filter wasn't set, BLOCK ACCESS
         // This prevents employees from seeing all records if something goes wrong
         if ($isEmployee && $employeeIdForFilter === null) {
-            \Log::error('SECURITY ISSUE: Employee detected but filter not applied!', [
+            Log::error('SECURITY ISSUE: Employee detected but filter not applied!', [
                 'user_id' => $user->id,
                 'user_role' => $user->role,
                 'employee_id_from_account' => $user->employee_id
@@ -348,7 +348,7 @@ class AttendanceController extends Controller
             // Start the query directly with the employee filter - this ensures it cannot be bypassed
             $query = AttendanceRecord::with(['employee.department', 'employee.account', 'breaks'])
                 ->where('employee_id', $employeeIdForFilter);
-            \Log::info('Employee filter applied FIRST to query', [
+            Log::info('Employee filter applied FIRST to query', [
                 'employee_id' => $employeeIdForFilter,
                 'user_id' => $user->id,
                 'user_role' => $user->role
@@ -407,7 +407,7 @@ class AttendanceController extends Controller
         
         // Log the final query for debugging
         if ($employeeIdForFilter !== null) {
-            \Log::info('Final query before execution', [
+            Log::info('Final query before execution', [
                 'employee_id_filter' => $employeeIdForFilter,
                 'sql_preview' => $query->toSql(),
                 'bindings' => $query->getBindings()
@@ -441,7 +441,7 @@ class AttendanceController extends Controller
             $allEmployeeIds = $attendanceRecords->pluck('employee_id')->unique()->values()->all();
             $filterWorking = empty($allEmployeeIds) || (count($allEmployeeIds) === 1 && $allEmployeeIds[0] === $employeeIdForFilter);
             
-            \Log::info('Query executed', [
+            Log::info('Query executed', [
                 'employee_id_filter' => $employeeIdForFilter,
                 'records_count' => $attendanceRecords->count(),
                 'total_records' => $attendanceRecords->total(),
@@ -452,7 +452,7 @@ class AttendanceController extends Controller
             
             // CRITICAL SECURITY CHECK: If filter is not working, BLOCK the results
             if (!$filterWorking && $attendanceRecords->count() > 0) {
-                \Log::error('SECURITY BREACH DETECTED: Employee filter failed! Blocking results.', [
+                Log::error('SECURITY BREACH DETECTED: Employee filter failed! Blocking results.', [
                     'employee_id_filter' => $employeeIdForFilter,
                     'found_employee_ids' => $allEmployeeIds,
                     'total_records' => $attendanceRecords->total(),
@@ -470,7 +470,7 @@ class AttendanceController extends Controller
         // CRITICAL SAFETY CHECK: If user is an employee but filter wasn't set, BLOCK ACCESS
         // This prevents employees from seeing all records if something goes wrong
         if ($isEmployee && $employeeIdForFilter === null && !$attendanceRecords->isEmpty()) {
-            \Log::error('SECURITY ISSUE: Employee detected but filter not applied! Blocking access.', [
+            Log::error('SECURITY ISSUE: Employee detected but filter not applied! Blocking access.', [
                 'user_id' => $user->id,
                 'user_email' => $user->email,
                 'user_role' => $user->role,
@@ -562,7 +562,7 @@ class AttendanceController extends Controller
             }
             $departments = $departmentsQuery->orderBy('name')->get();
             } catch (\Exception $e) {
-                \Log::warning('Error loading employees/departments for filters', [
+                Log::warning('Error loading employees/departments for filters', [
                     'error' => $e->getMessage(),
                     'user_id' => $user->id
                 ]);
@@ -589,7 +589,7 @@ class AttendanceController extends Controller
             
             // Check if view is valid
             if ($view === null) {
-                \Log::error('View returned null', [
+                Log::error('View returned null', [
                     'view' => 'attendance.timekeeping',
                     'user_id' => $user->id
                 ]);
@@ -607,7 +607,7 @@ class AttendanceController extends Controller
             
             return $view;
         } catch (\Exception $e) {
-            \Log::error('Error rendering timekeeping view', [
+            Log::error('Error rendering timekeeping view', [
                 'error' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
                 'user_id' => $user->id,
@@ -1691,7 +1691,7 @@ public function schedule(Request $request)
 
         // If user is an employee, restrict to ONLY their own records
         if ($isEmployee) {
-            \Log::info('Timekeeping export access - Employee detected', [
+            Log::info('Timekeeping export access - Employee detected', [
                 'user_id' => $user->id,
                 'user_email' => $user->email,
                 'user_role' => $user->role
@@ -1706,7 +1706,7 @@ public function schedule(Request $request)
                     $employee = $user->employee;
                 }
             } catch (\Exception $e) {
-                \Log::warning('Employee relationship failed in exportTimekeeping()', ['error' => $e->getMessage()]);
+                Log::warning('Employee relationship failed in exportTimekeeping()', ['error' => $e->getMessage()]);
             }
             
             // Method 2: Try direct find if employee_id exists
@@ -1724,7 +1724,7 @@ public function schedule(Request $request)
             if ($employee && $employee->id) {
                 $employeeIdForFilter = $employee->id;
                 $query->where('employee_id', $employeeIdForFilter);
-                \Log::info('Employee ID determined for timekeeping export filter', [
+                Log::info('Employee ID determined for timekeeping export filter', [
                     'employee_id' => $employeeIdForFilter,
                     'employee_name' => $employee->full_name ?? 'N/A'
                 ]);

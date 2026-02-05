@@ -230,6 +230,18 @@ Route::get('/debug-current-payrolls', function() {
         Route::delete('/sessions/{session}', [App\Http\Controllers\Web\HrController::class, 'terminateSession'])->name('sessions.terminate');
         Route::delete('/sessions', [App\Http\Controllers\Web\HrController::class, 'terminateAllOtherSessions'])->name('sessions.terminate-all');
         Route::post('/track-session', [App\Http\Controllers\Web\HrController::class, 'trackLoginSession'])->name('track-session');
+        
+        // Contact HR routes
+        Route::get('/contact', [App\Http\Controllers\Web\HrContactController::class, 'index'])->name('contact.index');
+        Route::post('/contact', [App\Http\Controllers\Web\HrContactController::class, 'store'])->name('contact.store');
+        Route::get('/contact/{hrContact}', [App\Http\Controllers\Web\HrContactController::class, 'show'])->name('contact.show');
+        Route::post('/contact/{hrContact}/respond', [App\Http\Controllers\Web\HrContactController::class, 'respond'])->name('contact.respond');
+        Route::get('/contacts/admin', [App\Http\Controllers\Web\HrContactController::class, 'admin'])->name('contacts.admin');
+        Route::get('/messages', [App\Http\Controllers\Web\HrContactController::class, 'messages'])->name('messages.index');
+        
+        // Help & Support routes
+        Route::get('/help-support', [App\Http\Controllers\Web\HelpSupportController::class, 'index'])->name('help-support');
+        Route::post('/help-support/ticket', [App\Http\Controllers\Web\HelpSupportController::class, 'storeTicket'])->name('help-support-ticket-store');
     });
     
     // Attendance routes

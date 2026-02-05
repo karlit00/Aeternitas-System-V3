@@ -27,7 +27,7 @@ class EmployeeController extends Controller
             'hire_date' => 'required|date',
         ]);
 
-        $employee = Employee::create($request->all());
+        $employee = Employee::create($request->validated());
 
         return response()->json($employee, 201);
     }
@@ -51,7 +51,7 @@ class EmployeeController extends Controller
             'hire_date' => 'sometimes|required|date',
         ]);
 
-        $employee->update($request->all());
+        $employee->update($request->validated());
 
         return response()->json($employee);
     }

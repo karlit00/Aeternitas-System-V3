@@ -1,20 +1,20 @@
 <?php $__env->startSection('title', 'Attendance Settings'); ?>
 
 <?php $__env->startSection('content'); ?>
-<div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Attendance Settings</h1>
-            <p class="mt-1 text-sm text-gray-600">Configure attendance policies and rules</p>
-        </div>
-        <div class="mt-4 sm:mt-0">
-            <button class="inline-flex items-center px-4 py-2 bg-blue-600 border border-transparent rounded-lg font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-                <i class="fas fa-save mr-2"></i>
-                Save Settings
-            </button>
-        </div>
-    </div>
+<?php if (isset($component)) { $__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.page-header','data' => ['title' => 'Attendance Settings','description' => 'Configure attendance policies and rules','actions' => [
+        ['type' => 'button', 'label' => 'Save Settings', 'icon' => 'save', 'variant' => 'primary']
+    ]]] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('page-header'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['title' => 'Attendance Settings','description' => 'Configure attendance policies and rules','actions' => \Illuminate\View\Compilers\BladeCompiler::sanitizeComponentAttribute([
+        ['type' => 'button', 'label' => 'Save Settings', 'icon' => 'save', 'variant' => 'primary']
+    ])]); ?>
 
     <!-- General Settings -->
     <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
@@ -254,7 +254,16 @@
             </div>
         </div>
     </div>
-</div>
+ <?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e)): ?>
+<?php $attributes = $__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e; ?>
+<?php unset($__attributesOriginalf8d4ea307ab1e58d4e472a43c8548d8e); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e)): ?>
+<?php $component = $__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e; ?>
+<?php unset($__componentOriginalf8d4ea307ab1e58d4e472a43c8548d8e); ?>
+<?php endif; ?>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('layouts.dashboard-base', ['user' => $user, 'activeRoute' => 'attendance.settings'], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\internship\Aeternitas-System-V2\resources\views/attendance/settings.blade.php ENDPATH**/ ?>
