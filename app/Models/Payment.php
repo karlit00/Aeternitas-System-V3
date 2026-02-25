@@ -44,4 +44,12 @@ class Payment extends Model
     {
         return $this->belongsTo(\App\Models\Employee::class);
     }
+
+    /**
+     * Payment processed by an Account (user)
+     */
+    public function processedBy(): BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Account::class, 'processed_by');
+    }
 }

@@ -947,7 +947,71 @@
         <?php endif; ?>
     </div>
 
+    <!-- Confirmation Modal for Payroll Generation -->
+    <?php if (isset($component)) { $__componentOriginal5b8b2d0f151a30be878e1a760ec3900c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.confirmation-modal','data' => ['id' => 'payrollConfirmationModal','title' => 'Generate Payroll','message' => 'Are you sure you want to generate payroll? This action will create payroll records for the selected period.','confirmText' => 'Generate','cancelText' => 'Cancel','confirmClass' => 'bg-blue-600 hover:bg-blue-700','icon' => 'calculator','iconColor' => 'text-blue-600']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('confirmation-modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['id' => 'payrollConfirmationModal','title' => 'Generate Payroll','message' => 'Are you sure you want to generate payroll? This action will create payroll records for the selected period.','confirmText' => 'Generate','cancelText' => 'Cancel','confirmClass' => 'bg-blue-600 hover:bg-blue-700','icon' => 'calculator','iconColor' => 'text-blue-600']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c)): ?>
+<?php $attributes = $__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c; ?>
+<?php unset($__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5b8b2d0f151a30be878e1a760ec3900c)): ?>
+<?php $component = $__componentOriginal5b8b2d0f151a30be878e1a760ec3900c; ?>
+<?php unset($__componentOriginal5b8b2d0f151a30be878e1a760ec3900c); ?>
+<?php endif; ?>
 
+    <!-- Confirmation Modal for Approve All Pending -->
+    <?php if (isset($component)) { $__componentOriginal5b8b2d0f151a30be878e1a760ec3900c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.confirmation-modal','data' => ['id' => 'approveAllConfirmationModal','title' => 'Approve All Pending','message' => 'Are you sure you want to approve all pending payrolls?','confirmText' => 'Approve All','cancelText' => 'Cancel','confirmClass' => 'bg-green-600 hover:bg-green-700','icon' => 'check-double','iconColor' => 'text-green-600']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('confirmation-modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['id' => 'approveAllConfirmationModal','title' => 'Approve All Pending','message' => 'Are you sure you want to approve all pending payrolls?','confirmText' => 'Approve All','cancelText' => 'Cancel','confirmClass' => 'bg-green-600 hover:bg-green-700','icon' => 'check-double','iconColor' => 'text-green-600']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c)): ?>
+<?php $attributes = $__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c; ?>
+<?php unset($__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5b8b2d0f151a30be878e1a760ec3900c)): ?>
+<?php $component = $__componentOriginal5b8b2d0f151a30be878e1a760ec3900c; ?>
+<?php unset($__componentOriginal5b8b2d0f151a30be878e1a760ec3900c); ?>
+<?php endif; ?>
+
+    <!-- Confirmation Modal for Process Payments -->
+    <?php if (isset($component)) { $__componentOriginal5b8b2d0f151a30be878e1a760ec3900c = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c = $attributes; } ?>
+<?php $component = Illuminate\View\AnonymousComponent::resolve(['view' => 'components.confirmation-modal','data' => ['id' => 'processPaymentsConfirmationModal','title' => 'Process Payments','message' => 'Are you sure you want to process payments for approved payrolls?','confirmText' => 'Process','cancelText' => 'Cancel','confirmClass' => 'bg-blue-600 hover:bg-blue-700','icon' => 'credit-card','iconColor' => 'text-blue-600']] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('confirmation-modal'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\Illuminate\View\AnonymousComponent::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes(['id' => 'processPaymentsConfirmationModal','title' => 'Process Payments','message' => 'Are you sure you want to process payments for approved payrolls?','confirmText' => 'Process','cancelText' => 'Cancel','confirmClass' => 'bg-blue-600 hover:bg-blue-700','icon' => 'credit-card','iconColor' => 'text-blue-600']); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c)): ?>
+<?php $attributes = $__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c; ?>
+<?php unset($__attributesOriginal5b8b2d0f151a30be878e1a760ec3900c); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginal5b8b2d0f151a30be878e1a760ec3900c)): ?>
+<?php $component = $__componentOriginal5b8b2d0f151a30be878e1a760ec3900c; ?>
+<?php unset($__componentOriginal5b8b2d0f151a30be878e1a760ec3900c); ?>
+<?php endif; ?>
 
     <!-- Mark as Paid (Individual) -->
     <div class="mt-4">
@@ -969,6 +1033,55 @@
 </div>
 
 <script>
+// Define button handler functions globally at the top
+window.generatePayroll = function() {
+    const startDate = document.getElementById('generateStartDate').value;
+    const endDate = document.getElementById('generateEndDate').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select a date range first.');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to generate payroll for the selected period?')) {
+        document.getElementById('generatePayrollForm').submit();
+    }
+};
+
+window.processPayments = function() {
+    const startDate = document.getElementById('paymentStartDate').value;
+    const endDate = document.getElementById('paymentEndDate').value;
+    
+    if (!startDate || !endDate) {
+        alert('Please select a date range first.');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to process payments for approved payrolls?')) {
+        document.getElementById('processPaymentsForm').submit();
+    }
+};
+
+window.markSelectedAsPaid = function() {
+    const selectedCheckboxes = document.querySelectorAll('.payroll-checkbox:checked');
+    
+    if (selectedCheckboxes.length === 0) {
+        alert('Please select at least one payroll to mark as paid.');
+        return;
+    }
+    
+    // Note: This function doesn't have a dedicated modal yet, so using browser confirm for now
+    if (confirm(`Mark ${selectedCheckboxes.length} selected payroll(s) as paid?`)) {
+        // Submit via AJAX or form
+        const form = document.getElementById('markAsPaidForm');
+        if (form) {
+            form.submit();
+        } else {
+            alert('Form not found. Please refresh the page.');
+        }
+    }
+};
+
 // Function to export with calculations
 
 async function exportPayrollWithCalculations() {
@@ -1927,65 +2040,7 @@ async function approveSelectedPayrolls() {
     }
 }
 
-/**
- * Mark selected payrolls as paid (FIXED VERSION)
- */
-async function markSelectedAsPaid() {
-    // Get selected checkboxes
-    const selectedCheckboxes = document.querySelectorAll('.payroll-checkbox:checked');
-    const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
-    
-    if (selectedIds.length === 0) {
-        alert('Please select at least one payroll to mark as paid.');
-        return;
-    }
-    
-    // Get date range
-    const startDate = document.getElementById('bulkStartDate').value;
-    const endDate = document.getElementById('bulkEndDate').value;
-    
-    if (!startDate || !endDate) {
-        alert('Please select a date range first.');
-        return;
-    }
-    
-    if (confirm(`Mark ${selectedIds.length} selected payroll(s) as paid?`)) {
-        try {
-            // Get CSRF token
-            const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-            
-            const response = await fetch('/payrolls/mark-as-paid', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': token,
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({
-                    payroll_ids: selectedIds,
-                    start_date: startDate,
-                    end_date: endDate
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                alert(`Successfully marked ${result.marked_count} payroll(s) as paid!`);
-                
-                // Reload the page to show updated status
-                setTimeout(() => {
-                    window.location.reload();
-                }, 1000);
-            } else {
-                alert('Error: ' + result.message);
-            }
-        } catch (error) {
-            console.error('Error:', error);
-            alert('Error marking as paid. Please try again.');
-        }
-    }
-}
+// (Removed duplicate window.markSelectedAsPaid - now defined at top of script)
 
 // Single Calendar Date Range Picker
 let currentDate = new Date();
@@ -2614,24 +2669,7 @@ function updatePaginationControls() {
     }
 }
 
-// Generate Payroll Function
-function generatePayroll() {
-    if (!selectedFromDate || !selectedToDate) {
-        alert('Please select a date range first');
-        return;
-    }
-    
-    if (!confirm(`Generate payroll for period ${formatDateForDisplay(selectedFromDate)} to ${formatDateForDisplay(selectedToDate)}?`)) {
-        return;
-    }
-    
-    // Set dates in form
-    document.getElementById('generateStartDate').value = formatDateForInput(selectedFromDate);
-    document.getElementById('generateEndDate').value = formatDateForInput(selectedToDate);
-    
-    // Submit form
-    document.getElementById('generatePayrollForm').submit();
-}
+// (Removed duplicate window.generatePayroll - now defined at top of script)
 
 // Filter and Sort Functions
 function toggleFilterDropdown() {
@@ -3199,98 +3237,7 @@ function approveAllPendingOld() {
 }
 
 // Process Payments Function - FIXED VERSION
-async function processPayments() {
-    const button = document.getElementById('processPaymentsBtn');
-    const originalText = button.innerHTML;
-    
-    try {
-        // Get date values
-        const startDate = document.getElementById('paymentStartDate').value;
-        const endDate = document.getElementById('paymentEndDate').value;
-        
-        if (!startDate || !endDate) {
-            alert('Please select a date range first.');
-            return;
-        }
-        
-        // Show loading state
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
-        button.disabled = true;
-        
-        // Get payroll status counts
-        const statusResponse = await fetch(`/ajax/payrolls/status-count?start_date=${encodeURIComponent(startDate)}&end_date=${encodeURIComponent(endDate)}`);
-        const statusData = await statusResponse.json();
-        
-        const approvedCount = statusData.approved || 0;
-        const pendingCount = statusData.pending || 0;
-        
-        if (approvedCount === 0 && pendingCount === 0) {
-            button.innerHTML = originalText;
-            button.disabled = false;
-            alert('No approved or pending payrolls found for this period. Please generate payroll first.');
-            return;
-        }
-        
-        if (approvedCount === 0 && pendingCount > 0) {
-            const confirmApprove = confirm(`No approved payrolls found. Found ${pendingCount} pending payroll(s). Do you want to approve them first and then process payments?`);
-            
-            if (confirmApprove) {
-                // Approve pending payrolls first
-                const approveResponse = await fetch('/ajax/payrolls/approve-all', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        start_date: startDate,
-                        end_date: endDate
-                    })
-                });
-                
-                const approveResult = await approveResponse.json();
-                
-                if (approveResult.success && approveResult.approved_count > 0) {
-                    // Wait a moment and check again
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                    
-                    // Now process payments
-                    if (confirm(`Successfully approved ${approveResult.approved_count} payroll(s). Now process payments?`)) {
-                        // Submit the form to process payments
-                        document.getElementById('processPaymentsForm').submit();
-                    } else {
-                        button.innerHTML = originalText;
-                        button.disabled = false;
-                    }
-                } else {
-                    button.innerHTML = originalText;
-                    button.disabled = false;
-                    alert('Failed to approve payrolls. Please try again.');
-                }
-            } else {
-                button.innerHTML = originalText;
-                button.disabled = false;
-                alert('Cannot process payments without approved payrolls.');
-            }
-        } else if (approvedCount > 0) {
-            // We have approved payrolls, process them directly
-            if (confirm(`Process payments for ${approvedCount} approved payroll(s) for this period?`)) {
-                // Submit the form to process payments
-                document.getElementById('processPaymentsForm').submit();
-            } else {
-                button.innerHTML = originalText;
-                button.disabled = false;
-            }
-        }
-        
-    } catch (error) {
-        console.error('Error:', error);
-        button.innerHTML = originalText;
-        button.disabled = false;
-        alert('Error: ' + error.message);
-    }
-}
+// (Removed duplicate - now defined at top of script)
 
 // Submit payment processing
 async function submitPaymentProcess(startDate, endDate) {
@@ -3343,7 +3290,8 @@ async function approveAllPendingAJAX(startDate, endDate) {
 }
 
 // Approve All Pending with confirmation and auto-refresh
-async function approveAllPendingWithConfirmation() {
+// Make approveAllPendingWithConfirmation globally accessible
+window.approveAllPendingWithConfirmation = async function() {
     const button = document.getElementById('approveAllPendingBtn');
     const originalText = button.innerHTML;
     
@@ -3365,12 +3313,14 @@ async function approveAllPendingWithConfirmation() {
             return;
         }
         
-        // Show loading state
-        button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Approving...';
-        button.disabled = true;
+        // Show confirmation dialog
+        const message = `Are you sure you want to approve all pending payrolls?\n\n${pendingCount} pending payroll${pendingCount > 1 ? 's' : ''} found\nPeriod: ${formatDateForDisplay(new Date(startDate))} — ${formatDateForDisplay(new Date(endDate))}\n\nThis action will approve all pending payrolls for the selected period.`;
         
-        // Get confirmation
-        if (confirm(`Approve ${pendingCount} pending payroll(s) for period ${formatDateForDisplay(new Date(startDate))} to ${formatDateForDisplay(new Date(endDate))}?`)) {
+        if (confirm(message)) {
+            // Show loading state
+            button.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Approving...';
+            button.disabled = true;
+            
             // Use the AJAX function (UPDATED)
             const approvedCount = await approveAllPendingAJAX(startDate, endDate);
             
@@ -3384,10 +3334,6 @@ async function approveAllPendingWithConfirmation() {
                 button.innerHTML = originalText;
                 button.disabled = false;
             }
-        } else {
-            // User cancelled
-            button.innerHTML = originalText;
-            button.disabled = false;
         }
         
     } catch (error) {
