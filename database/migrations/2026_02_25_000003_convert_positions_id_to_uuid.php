@@ -45,20 +45,9 @@ return new class extends Migration
 
     public function down()
     {
-        // Step 1: Add old id column back
-        Schema::table('positions', function (Blueprint $table) {
-            $table->bigIncrements('id')->first();
-        });
-
-        // Step 2: Drop uuid primary key
-        DB::statement('ALTER TABLE positions DROP PRIMARY KEY');
-
-        // Step 3: Set id as primary key
-        DB::statement('ALTER TABLE positions ADD PRIMARY KEY (id)');
-
-        // Step 4: Drop uuid column
-        Schema::table('positions', function (Blueprint $table) {
-            $table->dropColumn('id');
-        });
+        // This migration is intentionally irreversible.
+        // The original integer IDs were replaced by UUIDs and then dropped,
+        // so there is no safe way to restore the previous state.
+        throw new \RuntimeException('Migration 2026_02_25_000003_convert_positions_id_to_uuid cannot be rolled back safely.');
     }
 };
