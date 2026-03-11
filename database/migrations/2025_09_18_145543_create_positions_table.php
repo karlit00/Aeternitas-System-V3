@@ -26,7 +26,6 @@ return new class extends Migration
             $table->json('requirements')->nullable(); // Job requirements as JSON
             $table->json('responsibilities')->nullable(); // Job responsibilities as JSON
             $table->timestamps();
-
             // Indexes for better performance
             $table->index(['is_active', 'department_id']);
             $table->index('level');

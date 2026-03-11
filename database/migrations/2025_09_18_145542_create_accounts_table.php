@@ -22,8 +22,8 @@ return new class extends Migration
             $table->timestamp('last_login_at')->nullable();
             $table->rememberToken();
             $table->timestamps();
-            
-            $table->foreign('employee_id')->references('id')->on('employees')->onDelete('cascade');
+
+
         });
     }
 

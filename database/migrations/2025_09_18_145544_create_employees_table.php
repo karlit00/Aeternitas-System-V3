@@ -18,12 +18,15 @@ return new class extends Migration
             $table->string('last_name');
             $table->string('phone')->nullable();
             $table->uuid('department_id');
-            $table->string('position');
+            $table->uuid('position_id')->nullable();
+            $table->uuid('created_by')->nullable();
             $table->decimal('salary', 10, 2);
             $table->date('hire_date');
             $table->timestamps();
-            
+
             $table->foreign('department_id')->references('id')->on('departments')->onDelete('cascade');
+            $table->foreign('position_id')->references('id')->on('positions')->onDelete('set null');
+            $table->foreign('created_by')->references('id')->on('accounts')->onDelete('set null');
         });
     }
 

@@ -22,11 +22,22 @@ class Employee extends Model
         'last_name',
         'phone',
         'department_id',
-        'position',
+        'position_id',
+        'created_by',
+        'position', // deprecated, for migration only
         'salary',
         'hire_date',
         'company_id',
     ];
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class, 'position_id');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'created_by');
+    }
 
     protected $casts = [
         'salary' => 'decimal:2',
@@ -46,7 +57,7 @@ class Employee extends Model
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($model) {
             if (empty($model->id)) {
                 $model->id = Uuid::uuid4()->toString();
@@ -216,7 +227,7 @@ class Employee extends Model
     {
         return round($hours * $this->special_overtime, 2);
     }
-    
+
     /**
      * Get current work schedule for a specific date
      */

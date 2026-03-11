@@ -13,7 +13,7 @@ class CreatePaymentsTable extends Migration
 
             // Match the payrolls.id data type - if payrolls uses UUID, use string
             $table->string('payroll_id')->nullable()->index();
-            $table->unsignedBigInteger('employee_id')->nullable()->index();
+            $table->string('employee_id', 36)->nullable()->index();
 
             $table->decimal('amount', 14, 2)->default(0);
             $table->string('status')->default('pending');
@@ -27,9 +27,7 @@ class CreatePaymentsTable extends Migration
                 $table->foreign('payroll_id')->references('id')->on('payrolls')->onDelete('set null');
             }
 
-            if (Schema::hasTable('employees')) {
-                $table->foreign('employee_id')->references('id')->on('employees')->onDelete('set null');
-            }
+            // Do not add foreign key here; will add in a separate migration after both tables exist
         });
     }
 
