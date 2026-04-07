@@ -36,6 +36,34 @@ class EmployeeOtherInfo extends Model
         'spouse',
         'spouse_employed',
         'photo_path',
+        
+        // Hiring/Onboarding Documents
+        'job_application',
+        'resume',
+        'offer_letter',
+        'employment_contract',
+        'onboarding_checklist',
+        
+        // Employment Details
+        'job_description',
+        'tax_forms',
+        'emergency_contact',
+        'salary_history',
+        
+        // Offboarding Documents
+        'resignation_letter',
+        'exit_interview_records',
+        'termination_documentation',
+        
+        // Confidential Files
+        'medical_records',
+        'medical_leave_documents',
+        'health_insurance_info',
+        'background_checks',
+        'child_support_garnishment',
+        'bank_details',
+        'i9_forms',
+        'work_eligibility',
     ];
 
     protected $casts = [

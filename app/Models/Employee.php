@@ -24,7 +24,7 @@ class Employee extends Model
         'department_id',
         'position_id',
         'created_by',
-        'position', // deprecated, for migration only
+        'position', // position name for display
         'salary',
         'hire_date',
         'company_id',
@@ -52,6 +52,43 @@ class Employee extends Model
     public function position(): BelongsTo
     {
         return $this->belongsTo(Position::class, 'position_id');
+    }
+
+    /**
+     * Get the position name for display
+     * This ensures we show the position name instead of the full object
+     */
+    public function getPositionNameAttribute(): string
+    {
+        return $this->position?->name ?? $this->position ?? 'N/A';
+    }
+
+    /**
+     * Override the position attribute to return the name
+     * This ensures that when accessing $employee->position, we get the name
+     */
+    public function getPositionAttribute()
+    {
+        // If position_id exists, try to get the position name from relationship
+        if ($this->position_id) {
+            // Try to get the position from the loaded relationship
+            if ($this->relationLoaded('position')) {
+                // Use the raw relationship data to avoid recursion
+                $position = $this->getRelation('position');
+                if ($position) {
+                    return $position->name;
+                }
+            }
+            
+            // If relationship not loaded, try to get it directly
+            $position = Position::find($this->position_id);
+            if ($position) {
+                return $position->name;
+            }
+        }
+        
+        // Fallback to the position field (for legacy data)
+        return $this->attributes['position'] ?? 'N/A';
     }
 
     public function createdBy(): BelongsTo
@@ -115,11 +152,11 @@ class Employee extends Model
     }
 
     /**
-     * Scope to filter by company
+     * Get the employee's other information.
      */
-    public function scopeForCompany($query, $companyId)
+    public function employeeOtherInfo()
     {
-        return $query->where('company_id', $companyId);
+        return $this->hasOne(EmployeeOtherInfo::class);
     }
 
     public function payrolls(): HasMany
@@ -318,6 +355,14 @@ class Employee extends Model
         public function documents()
     {
         return $this->hasMany(Document::class);
+    }
+
+    /**
+     * Scope to filter employees by company
+     */
+    public function scopeForCompany($query, $companyId)
+    {
+        return $query->where('company_id', $companyId);
     }
 
 }
