@@ -41,10 +41,9 @@
                     <i class="fas fa-list mr-3 text-gray-400"></i>
                     <span>Employee List</span>
                 </a>
-                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                <a href="{{ route('employee-info.index') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'employee-info.index' ? 'bg-blue-50 text-blue-600' : '' }}">
                     <i class="fas fa-id-card mr-3 text-gray-400"></i>
-                    <span>Employee Info</span>
+                    <span>Employee Info & Documents</span>
                 </a>
                 <a href="{{ route('employees.other-employee-info') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'employees.other-employee-info' ? 'bg-blue-50 text-blue-600' : '' }}">
                     <i class="fas fa-user-circle mr-3 text-gray-400"></i>
@@ -57,11 +56,6 @@
                 <a href="{{ route('employees.prev-emp-oth') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'employees.prev-emp-oth' ? 'bg-blue-50 text-blue-600' : '' }}">
                     <i class="fas fa-briefcase mr-3 text-gray-400"></i>
                     <span>Previous Employer & Other</span>
-                </a>
-                <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                    <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
-                    <i class="fas fa-file-alt mr-3 text-gray-400"></i>
-                    <span>Documents</span>
                 </a>
                 <a href="{{ route('employees.ytd-info') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'employees.ytd-info' ? 'bg-blue-50 text-blue-600' : '' }}">
                     <i class="fas fa-passport mr-3 text-gray-400"></i>
@@ -282,8 +276,7 @@
                             <i class="fas fa-calendar-check mr-3 text-gray-400"></i>
                             <span>Balance of Leaves</span>
                         </a>
-                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                        <a href="{{ route('hr.employee-personnel-files') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'hr.employee-personnel-files' ? 'bg-blue-50 text-blue-600' : '' }}">
                             <i class="fas fa-file-contract mr-3 text-gray-400"></i>
                             <span>Employee Filings</span>
                         </a>
@@ -292,13 +285,11 @@
                             <i class="fas fa-birthday-cake mr-3 text-gray-400"></i>
                             <span>Birthdays per Month</span>
                         </a>
-                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                        <a href="{{ route('hr.reports.new-employees') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'hr.reports.new-employees' ? 'bg-blue-50 text-blue-600' : '' }}">
                             <i class="fas fa-user-plus mr-3 text-gray-400"></i>
                             <span>New Employees</span>
                         </a>
-                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                        <a href="{{ route('hr.reports.end-of-contracts') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'hr.reports.end-of-contracts' ? 'bg-blue-50 text-blue-600' : '' }}">
                             <i class="fas fa-hourglass-end mr-3 text-gray-400"></i>
                             <span>End of Contracts</span>
                         </a>
@@ -864,7 +855,7 @@ document.addEventListener('DOMContentLoaded', function() {
     timekeepingBtns.forEach(btn => {
         btn.addEventListener('click', function(e) {
             e.preventDefault();
-            const submenu = this.closest('.timekeeping-report-group')?.querySelector('.timekeepingReportSubMenu');
+            const submenu = this.closest('.group').querySelector('.timekeepingReportSubMenu');
             if (submenu) {
                 submenu.classList.toggle('hidden');
             }

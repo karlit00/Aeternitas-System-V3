@@ -8,6 +8,7 @@ use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\AuthController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\Web\EmployeeDashboardController;
+use App\Http\Controllers\Web\EmployeeInfoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -252,6 +253,36 @@ Route::get('/debug-current-payrolls', function() {
         // Help & Support routes
         Route::get('/help-support', [App\Http\Controllers\Web\HelpSupportController::class, 'index'])->name('help-support');
         Route::post('/help-support/ticket', [App\Http\Controllers\Web\HelpSupportController::class, 'storeTicket'])->name('help-support-ticket-store');
+        
+        // Employee Personnel Files routes
+        Route::get('/employee-personnel-files', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'index'])->name('employee-personnel-files');
+        
+        // View file route for modal (must be before other routes to avoid conflicts)
+        Route::get('/employee-personnel-files/view/{employeeId}/{category}/{filename}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'viewFile'])->name('employee-personnel-files.view');
+        
+        Route::get('/employee-personnel-files/{employeeId}/hiring', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showHiring'])->name('employee-personnel-files.hiring');
+        Route::get('/employee-personnel-files/{employeeId}/employment', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showEmployment'])->name('employee-personnel-files.employment');
+        Route::get('/employee-personnel-files/{employeeId}/performance', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showPerformance'])->name('employee-personnel-files.performance');
+        Route::get('/employee-personnel-files/{employeeId}/offboarding', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showOffboarding'])->name('employee-personnel-files.offboarding');
+        Route::get('/employee-personnel-files/{employeeId}/confidential', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showConfidential'])->name('employee-personnel-files.confidential');
+        
+        // Upload routes
+        Route::post('/employee-personnel-files/{employeeId}/upload/{category}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'uploadFile'])->name('employee-personnel-files.upload');
+        
+        // Delete file route
+        Route::delete('/employee-personnel-files/{employeeId}/{category}/{filename}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'deleteFile'])->name('employee-personnel-files.delete');
+        
+        // New Employee Screen Route
+        Route::get('/reports/new-employees', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showNewEmployees'])->name('reports.new-employees');
+        
+        // End of Contracts Screen Route
+        Route::get('/reports/end-of-contracts', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showEndOfContracts'])->name('reports.end-of-contracts');
+        
+        // End of Contracts AJAX Actions
+        Route::post('/reports/end-of-contracts/send-reminder/{employeeId}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'sendReminder'])->name('reports.end-of-contracts.send-reminder');
+        Route::post('/reports/end-of-contracts/send-reminders', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'sendReminders'])->name('reports.end-of-contracts.send-reminders');
+        Route::post('/reports/end-of-contracts/generate-renewal-letters', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'generateRenewalLetters'])->name('reports.end-of-contracts.generate-renewal-letters');
+        Route::post('/reports/end-of-contracts/schedule-reminders', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'scheduleReminders'])->name('reports.end-of-contracts.schedule-reminders');
     });
     
     // Attendance routes
@@ -347,7 +378,7 @@ Route::get('/debug-current-payrolls', function() {
             Route::get('/reports', [App\Http\Controllers\Web\AttendanceController::class, 'reports'])->name('reports');
             
             Route::get('/settings', function () {
-                return view('attendance.settings', ['user' => auth()->user()]);
+                return view('attendance.settings');
             })->name('settings');
         });
     });
@@ -373,6 +404,14 @@ Route::get('/debug-current-payrolls', function() {
     // Employee documents page
     Route::get('/employees/{id}/documents', [EmployeeController::class, 'documents'])->name('employees.documents');
 });
+
+    // Employee Info routes
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/employee-info', [EmployeeInfoController::class, 'index'])->name('employee-info.index');
+        Route::get('/employee-info/{employeeId}/documents', [EmployeeInfoController::class, 'getEmployeeDocuments'])->name('employee-info.documents');
+        Route::get('/employee-info/document/{documentId}/download', [EmployeeInfoController::class, 'downloadDocument'])->name('employee-info.document.download');
+        Route::delete('/employee-info/document/{documentId}', [EmployeeInfoController::class, 'deleteDocument'])->name('employee-info.document.delete');
+    });
 
 // Employee Dashboard Routes
 Route::middleware(['auth', 'verified'])->prefix('employee')->name('employee.')->group(function () {
