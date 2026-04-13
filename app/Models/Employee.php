@@ -199,6 +199,11 @@ class Employee extends Model
         return $this->hasMany(LeaveBalance::class);
     }
 
+    public function offences(): HasMany
+    {
+        return $this->hasMany(EmployeeOffence::class)->orderBy('offence_date', 'desc');
+    }
+
     public function previousEmployments(): HasMany
     {
         return $this->hasMany(PreviousEmployment::class)->orderBy('sequence');

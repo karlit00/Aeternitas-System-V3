@@ -16,7 +16,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
         run: |
           if [ -z "$DISCORD_WEBHOOK" ]; then
-            echo "DISCORD_WEBHOOK secret is not set. Skipping notification."
+            echo "DISCORD_WEBHOOK secret is not set, skipping notification."
             exit 0
           fi
 

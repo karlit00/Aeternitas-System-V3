@@ -313,8 +313,7 @@
                             <i class="fas fa-certificate mr-3 text-gray-400"></i>
                             <span>Employment Certificates</span>
                         </a>
-                        <a href="#" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors">
-                            <i class="fas fa-circle text-red-500 mr-2 text-xs"></i>
+                        <a href="{{ route('hr.reports.employee-offences') }}" class="flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600 transition-colors {{ $activeRoute === 'hr.reports.employee-offences' ? 'bg-blue-50 text-blue-600' : '' }}">
                             <i class="fas fa-gavel mr-3 text-gray-400"></i>
                             <span>Employee Offences</span>
                         </a>

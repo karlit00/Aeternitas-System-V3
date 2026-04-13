@@ -269,6 +269,9 @@ Route::get('/debug-current-payrolls', function() {
         // Upload routes
         Route::post('/employee-personnel-files/{employeeId}/upload/{category}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'uploadFile'])->name('employee-personnel-files.upload');
         
+        // Update file route
+        Route::post('/employee-personnel-files/{employeeId}/update/{category}/{oldFilename}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'updateFile'])->name('employee-personnel-files.update');
+        
         // Delete file route
         Route::delete('/employee-personnel-files/{employeeId}/{category}/{filename}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'deleteFile'])->name('employee-personnel-files.delete');
         

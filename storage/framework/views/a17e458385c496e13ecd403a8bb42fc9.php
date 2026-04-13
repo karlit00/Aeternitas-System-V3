@@ -222,6 +222,8 @@
     updateTime();
     setInterval(updateTime, 60000);
     </script>
+    
+    <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>
 </html>
 <?php /**PATH C:\Users\sushitrash\Desktop\Aeternitas-System-V2-1\resources\views/layouts/dashboard-base.blade.php ENDPATH**/ ?>

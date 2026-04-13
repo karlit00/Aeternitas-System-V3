@@ -269,6 +269,9 @@ Route::get('/debug-current-payrolls', function() {
         // Upload routes
         Route::post('/employee-personnel-files/{employeeId}/upload/{category}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'uploadFile'])->name('employee-personnel-files.upload');
         
+        // Update file route
+        Route::post('/employee-personnel-files/{employeeId}/update/{category}/{oldFilename}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'updateFile'])->name('employee-personnel-files.update');
+        
         // Delete file route
         Route::delete('/employee-personnel-files/{employeeId}/{category}/{filename}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'deleteFile'])->name('employee-personnel-files.delete');
         
@@ -283,6 +286,15 @@ Route::get('/debug-current-payrolls', function() {
         Route::post('/reports/end-of-contracts/send-reminders', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'sendReminders'])->name('reports.end-of-contracts.send-reminders');
         Route::post('/reports/end-of-contracts/generate-renewal-letters', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'generateRenewalLetters'])->name('reports.end-of-contracts.generate-renewal-letters');
         Route::post('/reports/end-of-contracts/schedule-reminders', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'scheduleReminders'])->name('reports.end-of-contracts.schedule-reminders');
+        
+        // Employee Offences Routes
+        Route::get('/reports/employee-offences', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'index'])->name('reports.employee-offences');
+        Route::get('/reports/employee-offences/{id}', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'show'])->name('reports.employee-offences.show');
+        Route::post('/reports/employee-offences', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'store'])->name('reports.employee-offences.store');
+        Route::put('/reports/employee-offences/{id}', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'update'])->name('reports.employee-offences.update');
+        Route::post('/reports/employee-offences/{id}/status', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'updateStatus'])->name('reports.employee-offences.update-status');
+        Route::delete('/reports/employee-offences/{id}', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'destroy'])->name('reports.employee-offences.destroy');
+        Route::get('/reports/employee-offences/employee/{employeeId}', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'getByEmployee'])->name('reports.employee-offences.by-employee');
     });
     
     // Attendance routes

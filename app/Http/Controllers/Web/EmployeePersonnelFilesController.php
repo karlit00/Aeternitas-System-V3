@@ -748,4 +748,108 @@ class EmployeePersonnelFilesController extends Controller
             ], 500);
         }
     }
+
+    /**
+     * Update a file in employee personnel files
+     * Replaces the existing file with a new one
+     */
+    public function updateFile(Request $request, $employeeId, $category, $oldFilename)
+    {
+        $employee = Employee::findOrFail($employeeId);
+        $this->authorizeAccess($employee);
+
+        // Validate new file
+        $request->validate([
+            'file' => 'required|file|max:2048|mimes:pdf,doc,docx',
+            'document_type' => 'required|string'
+        ]);
+
+        $file = $request->file('file');
+        $documentType = $request->input('document_type');
+        $newFilename = time() . '_' . $file->getClientOriginalName();
+        $newFilePath = "employee_files/{$employeeId}/{$category}/{$newFilename}";
+
+        try {
+            // Get employee other info
+            $employeeOtherInfo = $employee->employeeOtherInfo;
+            if (!$employeeOtherInfo) {
+                return redirect()->back()->with('error', 'Employee information not found.');
+            }
+
+            // Field mapping for database
+            $fieldMapping = [
+                'hiring' => [
+                    'job_application' => 'job_application',
+                    'resume' => 'resume', 
+                    'offer_letter' => 'offer_letter',
+                    'employment_contract' => 'employment_contract',
+                    'onboarding_checklist' => 'onboarding_checklist',
+                ],
+                'employment' => [
+                    'job_description' => 'job_description',
+                    'tax_forms' => 'tax_forms',
+                    'emergency_contact' => 'emergency_contact',
+                    'salary_history' => 'salary_history',
+                ],
+                'offboarding' => [
+                    'resignation_letter' => 'resignation_letter',
+                    'exit_interview_records' => 'exit_interview_records',
+                    'termination_documentation' => 'termination_documentation',
+                ],
+                'confidential' => [
+                    'medical_records' => 'medical_records',
+                    'medical_leave_documents' => 'medical_leave_documents',
+                    'health_insurance_info' => 'health_insurance_info',
+                    'background_checks' => 'background_checks',
+                    'child_support_garnishment' => 'child_support_garnishment',
+                    'bank_details' => 'bank_details',
+                    'i9_forms' => 'i9_forms',
+                    'work_eligibility' => 'work_eligibility',
+                ],
+            ];
+
+            // Get field name
+            $fieldName = $fieldMapping[$category][$documentType] ?? null;
+            if (!$fieldName) {
+                return redirect()->back()->with('error', 'Invalid document type.');
+            }
+
+            // Get old file path
+            $oldFilePath = $employeeOtherInfo->$fieldName;
+
+            // Delete old file if it exists
+            if ($oldFilePath && Storage::disk('public')->exists($oldFilePath)) {
+                Storage::disk('public')->delete($oldFilePath);
+                Log::info("Old file deleted: {$oldFilePath}");
+            }
+
+            // Store new file
+            $storedPath = Storage::disk('public')->putFileAs(
+                "employee_files/{$employeeId}/{$category}",
+                $file,
+                $newFilename
+            );
+
+            // Update database with new file path
+            $employeeOtherInfo->$fieldName = $storedPath;
+            $employeeOtherInfo->save();
+
+            Log::info("File updated in personnel files: {$employee->full_name} - {$category} - {$documentType}", [
+                'old_file' => $oldFilePath,
+                'new_file' => $storedPath,
+                'file_size' => $file->getSize(),
+                'file_type' => $file->getMimeType()
+            ]);
+
+            return redirect()->back()->with('success', 'File updated successfully.');
+        } catch (\Exception $e) {
+            Log::error("File update failed: {$employee->full_name} - {$category} - {$documentType}", [
+                'error' => $e->getMessage(),
+                'file_size' => $file->getSize(),
+                'file_type' => $file->getMimeType()
+            ]);
+            
+            return redirect()->back()->with('error', 'File update failed. Please try again with a smaller file (max 2MB).');
+        }
+    }
 }
