@@ -52,7 +52,7 @@ class CompanyController extends Controller
             'is_active' => 'boolean'
         ]);
 
-        Company::create($request->all());
+        Company::create($request->validated());
 
         return redirect()->route('companies.index')
             ->with('success', 'Company created successfully.');
@@ -100,7 +100,7 @@ class CompanyController extends Controller
             'is_active' => 'boolean'
         ]);
 
-        $company->update($request->all());
+        $company->update($request->validated());
 
         return redirect()->route('companies.index')
             ->with('success', 'Company updated successfully.');

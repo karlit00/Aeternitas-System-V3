@@ -14,6 +14,32 @@ use Carbon\Carbon;
 class ScheduleV2Controller extends Controller
 {
     /**
+     * Default schedule status by date.
+     */
+    private function getDefaultStatusForDate(Carbon $date): string
+    {
+        return $date->isWeekday() ? 'Working' : 'Day Off';
+    }
+
+    /**
+     * Resolve schedule time values with weekday defaults.
+     */
+    private function resolveScheduleTimes(string $status, Carbon $date, ?string $timeIn, ?string $timeOut): array
+    {
+        if (!in_array($status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
+            return [null, null];
+        }
+
+        // Auto-default weekday working schedule to 9:00 AM - 5:00 PM.
+        if ($status === 'Working' && $date->isWeekday()) {
+            $timeIn = $timeIn ?: '09:00';
+            $timeOut = $timeOut ?: '17:00';
+        }
+
+        return [$timeIn, $timeOut];
+    }
+
+    /**
      * Get current filter state from request
      */
     private function getFilterState(Request $request)
@@ -49,6 +75,12 @@ class ScheduleV2Controller extends Controller
         $selectedMonth = $request->get('month', now()->month);
         $searchQuery = $request->get('search');
 
+        $user = Auth::user();
+        
+        // Determine if this is HR dashboard (HR/Admin can see all employees)
+        // Note: Auth::user() returns Account model, which has a 'role' field
+        $isHRDashboard = $user && in_array(strtolower($user->role ?? ''), ['admin', 'hr', 'manager']);
+
         // Get departments for filter
         $departmentsQuery = Department::query();
         if ($currentCompany) {
@@ -60,6 +92,11 @@ class ScheduleV2Controller extends Controller
         $employeesQuery = Employee::with('department');
         if ($currentCompany) {
             $employeesQuery->forCompany($currentCompany->id);
+        }
+        
+        // If not HR, only allow viewing own record
+        if (!$isHRDashboard) {
+            $employeesQuery->where('id', $user->id);
         }
         
         $employees = $employeesQuery
@@ -76,12 +113,15 @@ class ScheduleV2Controller extends Controller
             ->orderBy('first_name')
             ->get();
 
-        // If no department selected, get all employees for the bulk modal
-        $allEmployeesQuery = Employee::with('department');
-        if ($currentCompany) {
-            $allEmployeesQuery->forCompany($currentCompany->id);
+        // Get all employees for bulk modal (only if HR)
+        $allEmployees = collect();
+        if ($isHRDashboard) {
+            $allEmployeesQuery = Employee::with('department');
+            if ($currentCompany) {
+                $allEmployeesQuery->forCompany($currentCompany->id);
+            }
+            $allEmployees = $allEmployeesQuery->orderBy('first_name')->get();
         }
-        $allEmployees = $allEmployeesQuery->orderBy('first_name')->get();
 
         // Get schedules for the selected month
         $schedules = collect();
@@ -108,8 +148,6 @@ class ScheduleV2Controller extends Controller
         // Generate calendar days for the month
         $calendarDays = $this->generateCalendarDays($selectedYear, $selectedMonth);
 
-        $user = Auth::user();
-
         return view('attendance.schedule-v2.index', compact(
             'departments',
             'employees',
@@ -120,7 +158,8 @@ class ScheduleV2Controller extends Controller
             'selectedYear',
             'selectedMonth',
             'searchQuery',
-            'user'
+            'user',
+            'isHRDashboard'
         ));
     }
 
@@ -131,6 +170,10 @@ class ScheduleV2Controller extends Controller
     {
         $employeeId = $request->get('employee_id');
         $date = $request->get('date', now()->format('Y-m-d'));
+        $dateCarbon = Carbon::parse($date);
+        $defaultStatus = $this->getDefaultStatusForDate($dateCarbon);
+        $defaultTimeIn = $dateCarbon->isWeekday() ? '09:00' : null;
+        $defaultTimeOut = $dateCarbon->isWeekday() ? '17:00' : null;
 
         $currentCompany = CompanyHelper::getCurrentCompany();
         
@@ -143,10 +186,23 @@ class ScheduleV2Controller extends Controller
             $employee = $employeeQuery->find($employeeId);
         }
 
+        // Check if user is an employee
+        $user = Auth::user();
+        $userRole = strtolower(trim($user->role ?? ''));
+        $isEmployee = ($userRole === 'employee');
+        
         $employeesQuery = Employee::with('department');
+        
+        // For employees, only show their own record
+        if ($isEmployee && $user->employee) {
+            $employeesQuery->where('id', $user->employee->id);
+        } else {
+            // For admin/hr/manager, show all employees (filtered by company)
         if ($currentCompany) {
             $employeesQuery->forCompany($currentCompany->id);
+            }
         }
+        
         $employees = $employeesQuery->orderBy('first_name')->get();
         
         $departmentsQuery = \App\Models\Department::query();
@@ -159,7 +215,7 @@ class ScheduleV2Controller extends Controller
         // Get current filter state for back navigation
         $currentFilters = $this->getFilterState($request);
 
-        return view('attendance.schedule-v2.create', compact('employee', 'employees', 'departments', 'date', 'user', 'currentFilters'));
+        return view('attendance.schedule-v2.create', compact('employee', 'employees', 'departments', 'date', 'user', 'currentFilters', 'defaultStatus', 'defaultTimeIn', 'defaultTimeOut'));
     }
 
     /**
@@ -167,6 +223,18 @@ class ScheduleV2Controller extends Controller
      */
     public function store(Request $request)
     {
+        $user = Auth::user();
+        
+        // Check if user is an employee
+        $userRole = strtolower(trim($user->role ?? ''));
+        $isEmployee = ($userRole === 'employee');
+        
+        // For employees, ensure they can only create schedules for themselves
+        if ($isEmployee && $user->employee) {
+            // Override employee_id to ensure employees can only create their own schedules
+            $request->merge(['employee_id' => $user->employee->id]);
+        }
+        
         $request->validate([
             'employee_id' => 'required|exists:employees,id',
             'date' => 'required|date',
@@ -175,6 +243,13 @@ class ScheduleV2Controller extends Controller
             'status' => 'required|in:Working,Day Off,Leave,Absent,Regular Holiday,Special Holiday,Overtime',
             'notes' => 'nullable|string|max:500'
         ]);
+
+        // Additional security check: For employees, verify they're creating for themselves
+        if ($isEmployee && $user->employee && $request->employee_id !== $user->employee->id) {
+            return redirect()->back()
+                ->with('error', 'You can only create schedules for yourself.')
+                ->withInput();
+        }
 
         // Additional validation: if time_out is provided, it should be after time_in
         if ($request->time_in && $request->time_out) {
@@ -212,16 +287,14 @@ class ScheduleV2Controller extends Controller
             'created_by' => Auth::id(),
         ];
 
-        // Handle time fields based on status
-        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
-            // For working, holiday, day off, and leave statuses, use the provided time values
-            $scheduleData['time_in'] = $request->time_in;
-            $scheduleData['time_out'] = $request->time_out;
-        } else {
-            // For non-working statuses (Absent), set time values to null
-            $scheduleData['time_in'] = null;
-            $scheduleData['time_out'] = null;
-        }
+        [$resolvedTimeIn, $resolvedTimeOut] = $this->resolveScheduleTimes(
+            $request->status,
+            Carbon::parse($request->date),
+            $request->time_in,
+            $request->time_out
+        );
+        $scheduleData['time_in'] = $resolvedTimeIn;
+        $scheduleData['time_out'] = $resolvedTimeOut;
 
         EmployeeSchedule::create($scheduleData);
 
@@ -364,14 +437,14 @@ class ScheduleV2Controller extends Controller
                             'created_by' => Auth::id(),
                         ];
 
-                        // Handle time fields based on status
-                        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
-                            $scheduleData['time_in'] = $request->time_in;
-                            $scheduleData['time_out'] = $request->time_out;
-                        } else {
-                            $scheduleData['time_in'] = null;
-                            $scheduleData['time_out'] = null;
-                        }
+                        [$resolvedTimeIn, $resolvedTimeOut] = $this->resolveScheduleTimes(
+                            $request->status,
+                            Carbon::parse($date),
+                            $request->time_in,
+                            $request->time_out
+                        );
+                        $scheduleData['time_in'] = $resolvedTimeIn;
+                        $scheduleData['time_out'] = $resolvedTimeOut;
 
                         EmployeeSchedule::create($scheduleData);
                         $createdCount++;
@@ -422,14 +495,14 @@ class ScheduleV2Controller extends Controller
                             'created_by' => Auth::id(),
                         ];
 
-                        // Handle time fields based on status
-                        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
-                            $scheduleData['time_in'] = $request->time_in;
-                            $scheduleData['time_out'] = $request->time_out;
-                        } else {
-                            $scheduleData['time_in'] = null;
-                            $scheduleData['time_out'] = null;
-                        }
+                        [$resolvedTimeIn, $resolvedTimeOut] = $this->resolveScheduleTimes(
+                            $request->status,
+                            Carbon::parse($date),
+                            $request->time_in,
+                            $request->time_out
+                        );
+                        $scheduleData['time_in'] = $resolvedTimeIn;
+                        $scheduleData['time_out'] = $resolvedTimeOut;
 
                         EmployeeSchedule::create($scheduleData);
                         $createdCount++;
@@ -481,14 +554,14 @@ class ScheduleV2Controller extends Controller
                             'created_by' => Auth::id(),
                         ];
 
-                        // Handle time fields based on status
-                        if (in_array($request->status, ['Working', 'Overtime', 'Regular Holiday', 'Special Holiday', 'Day Off', 'Leave'])) {
-                            $scheduleData['time_in'] = $request->time_in;
-                            $scheduleData['time_out'] = $request->time_out;
-                        } else {
-                            $scheduleData['time_in'] = null;
-                            $scheduleData['time_out'] = null;
-                        }
+                        [$resolvedTimeIn, $resolvedTimeOut] = $this->resolveScheduleTimes(
+                            $request->status,
+                            $currentDate,
+                            $request->time_in,
+                            $request->time_out
+                        );
+                        $scheduleData['time_in'] = $resolvedTimeIn;
+                        $scheduleData['time_out'] = $resolvedTimeOut;
 
                         EmployeeSchedule::create($scheduleData);
                         $createdCount++;

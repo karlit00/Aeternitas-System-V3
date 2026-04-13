@@ -38,8 +38,8 @@ class RoleBasedDashboardController extends Controller
         $departmentQuery = Department::query();
         
         if ($currentCompany) {
-            $employeeQuery->forCompany($currentCompany->id);
-            $departmentQuery->forCompany($currentCompany->id);
+            $employeeQuery = $employeeQuery->forCompany($currentCompany->id);
+            $departmentQuery = $departmentQuery->forCompany($currentCompany->id);
         }
         
         $stats = [
@@ -56,7 +56,7 @@ class RoleBasedDashboardController extends Controller
             ->with('department');
             
         if ($currentCompany) {
-            $recent_employees->forCompany($currentCompany->id);
+            $recent_employees = $recent_employees->forCompany($currentCompany->id);
         }
         
         $recent_employees = $recent_employees->orderBy('created_at', 'desc')
@@ -65,7 +65,7 @@ class RoleBasedDashboardController extends Controller
 
         $department_stats = Department::query();
         if ($currentCompany) {
-            $department_stats->forCompany($currentCompany->id);
+            $department_stats = $department_stats->forCompany($currentCompany->id);
         }
         
         $department_stats = $department_stats->withCount('employees')
@@ -83,8 +83,8 @@ class RoleBasedDashboardController extends Controller
         $departmentQuery = Department::query();
         
         if ($currentCompany) {
-            $employeeQuery->forCompany($currentCompany->id);
-            $departmentQuery->forCompany($currentCompany->id);
+            $employeeQuery = $employeeQuery->forCompany($currentCompany->id);
+            $departmentQuery = $departmentQuery->forCompany($currentCompany->id);
         }
         
         $stats = [
@@ -96,7 +96,7 @@ class RoleBasedDashboardController extends Controller
 
         $recent_employees = Employee::query()->with('department');
         if ($currentCompany) {
-            $recent_employees->forCompany($currentCompany->id);
+            $recent_employees = $recent_employees->forCompany($currentCompany->id);
         }
         
         $recent_employees = $recent_employees->orderBy('created_at', 'desc')
@@ -105,7 +105,7 @@ class RoleBasedDashboardController extends Controller
 
         $department_breakdown = Department::query();
         if ($currentCompany) {
-            $department_breakdown->forCompany($currentCompany->id);
+            $department_breakdown = $department_breakdown->forCompany($currentCompany->id);
         }
         
         $department_breakdown = $department_breakdown->withCount('employees')->get();
@@ -195,11 +195,22 @@ class RoleBasedDashboardController extends Controller
             ->orderBy('year', 'desc')
             ->get();
 
+        // Get today's attendance record
+        $todayAttendance = $employee->getTodayAttendance();
+
+        // Get recent activity (last 5 days)
+        $recentActivity = $employee->attendanceRecords()
+            ->where('date', '>=', today()->subDays(5))
+            ->orderBy('date', 'desc')
+            ->get();
+
         return view('dashboards.employee', compact(
             'stats',
             'recent_payrolls',
             'yearly_summary',
-            'employee'
+            'employee',
+            'todayAttendance',
+            'recentActivity'
         ));
     }
 }

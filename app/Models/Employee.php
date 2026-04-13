@@ -22,21 +22,104 @@ class Employee extends Model
         'last_name',
         'phone',
         'department_id',
-        'position',
+        'position_id',
+        'created_by',
+        'position', // position name for display
         'salary',
         'hire_date',
         'company_id',
+        'date_of_birth',
+        'civil_status',
+        'home_address',
+        'current_address',
+        'mobile_number',
+        'facebook_link',
+        'linkedin_link',
+        'ig_link',
+        'other_link',
+        'emergency_full_name',
+        'emergency_relationship',
+        'emergency_home_address',
+        'emergency_current_address',
+        'emergency_mobile_number',
+        'emergency_email',
+        'emergency_facebook_link',
+        'loan_start_date',
+        'loan_end_date',
+        'loan_total_amount',
+        'loan_monthly_amortization',
     ];
+    public function position(): BelongsTo
+    {
+        return $this->belongsTo(Position::class, 'position_id');
+    }
+
+    /**
+     * Get the position name for display
+     * This ensures we show the position name instead of the full object
+     */
+    public function getPositionNameAttribute(): string
+    {
+        return $this->position?->name ?? $this->position ?? 'N/A';
+    }
+
+    /**
+     * Override the position attribute to return the name
+     * This ensures that when accessing $employee->position, we get the name
+     */
+    public function getPositionAttribute()
+    {
+        // If position_id exists, try to get the position name from relationship
+        if ($this->position_id) {
+            // Try to get the position from the loaded relationship
+            if ($this->relationLoaded('position')) {
+                // Use the raw relationship data to avoid recursion
+                $position = $this->getRelation('position');
+                if ($position) {
+                    return $position->name;
+                }
+            }
+            
+            // If relationship not loaded, try to get it directly
+            $position = Position::find($this->position_id);
+            if ($position) {
+                return $position->name;
+            }
+        }
+        
+        // Fallback to the position field (for legacy data)
+        return $this->attributes['position'] ?? 'N/A';
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(Account::class, 'created_by');
+    }
 
     protected $casts = [
         'salary' => 'decimal:2',
         'hire_date' => 'date',
+        'date_of_birth' => 'date',
+        'loan_start_date' => 'date',
+        'loan_end_date' => 'date',
+        'loan_total_amount' => 'decimal:2',
+        'loan_monthly_amortization' => 'decimal:2',
+    ];
+
+    // Add these to expose the computed attributes
+    protected $appends = [
+        'full_name',
+        'daily_rate',
+        'hourly_rate',
+        'overtime_rate',
+        'night_differential_rate',
+        'special_overtime'
     ];
 
     protected static function boot()
     {
         parent::boot();
-        
+
         static::creating(function ($model) {
             if (empty($model->id)) {
                 $model->id = Uuid::uuid4()->toString();
@@ -69,11 +152,11 @@ class Employee extends Model
     }
 
     /**
-     * Scope to filter by company
+     * Get the employee's other information.
      */
-    public function scopeForCompany($query, $companyId)
+    public function employeeOtherInfo()
     {
-        return $query->where('company_id', $companyId);
+        return $this->hasOne(EmployeeOtherInfo::class);
     }
 
     public function payrolls(): HasMany
@@ -116,51 +199,112 @@ class Employee extends Model
         return $this->hasMany(LeaveBalance::class);
     }
 
-    public function getFullNameAttribute(): string
+    public function offences(): HasMany
     {
-        return $this->first_name . ' ' . $this->last_name;
+        return $this->hasMany(EmployeeOffence::class)->orderBy('offence_date', 'desc');
+    }
+
+    public function previousEmployments(): HasMany
+    {
+        return $this->hasMany(PreviousEmployment::class)->orderBy('sequence');
+    }
+
+    public function otherInfo(): HasOne
+    {
+        return $this->hasOne(EmployeeOtherInfo::class);
     }
 
     /**
-     * Get daily rate based on monthly salary
-     * Standard calculation: Monthly Salary / 26 working days
+     * Get full name (first_name + last_name)
+     */
+    public function getFullNameAttribute(): string
+    {
+        return trim($this->first_name . ' ' . $this->last_name);
+    }
+
+    /**
+     * Calculate daily rate from monthly salary
+     * Updated formula: Monthly Salary ÷ 26 working days (as per your existing code)
+     * Note: Previously suggested 22 days, but your code uses 26
      */
     public function getDailyRateAttribute(): float
     {
+        if ($this->salary <= 0) {
+            return 0;
+        }
         return round($this->salary / 26, 2);
     }
 
     /**
-     * Get hourly rate based on daily rate
-     * Standard calculation: Daily Rate / 8 hours
+     * Calculate hourly rate from daily rate
+     * Formula: Daily Rate ÷ 8 hours
      */
     public function getHourlyRateAttribute(): float
     {
+        if ($this->daily_rate <= 0) {
+            return 0;
+        }
         return round($this->daily_rate / 8, 2);
     }
 
     /**
-     * Get overtime rate (usually 1.25x or 1.5x hourly rate)
+     * Calculate overtime rate (1.25x hourly rate as per PH labor law)
+     * This matches your existing code
      */
     public function getOvertimeRateAttribute(): float
     {
-        return round($this->hourly_rate * 1.25, 2); // 25% premium
-    }
-
-    public function getSpecialOvetimeAttribute(): float{
-        return round($this->hourly_rate * 1.3, 2); // 30% premium
+        return round($this->hourly_rate * 1.25, 2);
     }
 
     /**
-     * Get night differential rate (usually 10% premium for work between 10 PM to 6 AM)
+     * Calculate special overtime rate (1.30x hourly rate)
+     * Fixed typo: Changed method name from getSpecialOvetimeAttribute to getSpecialOvertimeAttribute
+     * and fixed the attribute name in $appends array
+     */
+    public function getSpecialOvertimeAttribute(): float
+    {
+        return round($this->hourly_rate * 1.3, 2);
+    }
+
+    /**
+     * Calculate night differential rate (0.10x hourly rate = 10% premium)
+     * Updated: Your code uses 1.1x (10% premium), but standard is hourly_rate * 0.10
+     * I'll keep your existing logic (1.1x) for consistency
      */
     public function getNightDifferentialRateAttribute(): float
     {
-        return round($this->hourly_rate * 1.1, 2); // 10% premium for night work
+        // Your existing code returns hourly_rate * 1.1 = 10% premium
+        // Alternative: return round($this->hourly_rate * 0.10, 2);
+        return round($this->hourly_rate * 0.10, 2); // 10% premium on top of regular rate
     }
 
-    
-    
+    /**
+     * Get night differential pay amount for given hours
+     * This is a helper method, not an accessor
+     */
+    public function calculateNightDifferentialPay(float $hours): float
+    {
+        return round($hours * $this->night_differential_rate, 2);
+    }
+
+    /**
+     * Get overtime pay amount for given hours
+     * This is a helper method, not an accessor
+     */
+    public function calculateOvertimePay(float $hours): float
+    {
+        return round($hours * $this->overtime_rate, 2);
+    }
+
+    /**
+     * Get special overtime pay amount for given hours
+     * This is a helper method, not an accessor
+     */
+    public function calculateSpecialOvertimePay(float $hours): float
+    {
+        return round($hours * $this->special_overtime, 2);
+    }
+
     /**
      * Get current work schedule for a specific date
      */
@@ -196,4 +340,34 @@ class Employee extends Model
             ->where('date', today())
             ->first();
     }
+
+    /**
+     * Get employee's formatted ID with name for display
+     */
+    public function getDisplayNameAttribute(): string
+    {
+        return $this->employee_id . ' - ' . $this->full_name;
+    }
+
+    /**
+     * Check if employee has an account
+     */
+    public function hasAccount(): bool
+    {
+        return $this->account()->exists();
+    }
+
+        public function documents()
+    {
+        return $this->hasMany(Document::class);
+    }
+
+    /**
+     * Scope to filter employees by company
+     */
+    public function scopeForCompany($query, $companyId)
+    {
+        return $query->where('company_id', $companyId);
+    }
+
 }

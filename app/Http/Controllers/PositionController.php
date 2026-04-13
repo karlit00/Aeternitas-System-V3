@@ -44,7 +44,7 @@ class PositionController extends Controller
         }
         
         $departments = $departmentsQuery->orderBy('name')->get();
-        return view('positions.create', compact('user', 'departments'));
+        return view('positions.form', compact('user', 'departments'));
     }
 
     /**
@@ -102,7 +102,7 @@ class PositionController extends Controller
         }
         
         $departments = $departmentsQuery->orderBy('name')->get();
-        return view('positions.edit', compact('position', 'user', 'departments'));
+        return view('positions.form', compact('position', 'user', 'departments'));
     }
 
     /**

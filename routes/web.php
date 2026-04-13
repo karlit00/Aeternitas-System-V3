@@ -6,6 +6,9 @@ use App\Http\Controllers\Web\EmployeeController;
 use App\Http\Controllers\Web\PayrollController;
 use App\Http\Controllers\Web\DepartmentController;
 use App\Http\Controllers\Web\AuthController;
+use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\Web\EmployeeDashboardController;
+use App\Http\Controllers\Web\EmployeeInfoController;
 
 /*
 |--------------------------------------------------------------------------
@@ -21,7 +24,10 @@ use App\Http\Controllers\Web\AuthController;
 // Public routes (only accessible to guests)
 Route::middleware('guest')->group(function () {
     Route::get('/', [AuthController::class, 'showLogin'])->name('login');
+    // Add 'log.login' middleware to the login POST route
     Route::post('/login', [AuthController::class, 'login'])->name('login.post');
+    Route::get('/notifications/login-logs', [App\Http\Controllers\NotificationController::class, 'getLoginLogs'])
+        ->name('notifications.login-logs');
     
     // Password Reset Routes
     Route::get('/forgot-password', [AuthController::class, 'showForgotPassword'])->name('password.request');
@@ -30,16 +36,30 @@ Route::middleware('guest')->group(function () {
     Route::post('/reset-password', [AuthController::class, 'resetPassword'])->name('password.update');
 });
 
-
 // Protected routes
-Route::middleware('auth')->group(function () {
-        // Dashboard
-        Route::get('/dashboard', [RoleBasedDashboardController::class, 'index'])->name('dashboard');
-    
+Route::middleware(['auth', 'require.timein'])->group(function () {
+    // Notifications
+    Route::get('/notifications', [App\Http\Controllers\NotificationController::class, 'index'])
+        ->name('notifications.index')
+        ->middleware('role:admin,hr,manager');
+    // Dashboard
+    Route::get('/dashboard', [RoleBasedDashboardController::class, 'index'])->name('dashboard');
+   Route::get('/payroll/manage', [PayrollController::class, 'index'])->name('payroll.manage');
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+
     // Logout
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     
     // Employee routes
+    Route::get('/employees/bio-zk', [EmployeeController::class, 'bioZk'])->name('employees.bio-zk')->middleware('role:admin,hr');
+    Route::get('/employees/ytd-info', [EmployeeController::class, 'ytdInfo'])->name('employees.ytd-info')->middleware('role:admin,hr');
+    Route::get('/employees/education-training-rating', [EmployeeController::class, 'educationTrainingRating'])->name('employees.education-training-rating')->middleware('role:admin,hr');
+    Route::get('/employees/other-employee-info', [EmployeeController::class, 'otherEmployeeInfo'])->name('employees.other-employee-info')->middleware('role:admin,hr');
+    Route::post('/employees/other-employee-info', [EmployeeController::class, 'saveOtherEmployeeInfo'])->name('employees.other-employee-info.save')->middleware('role:admin,hr');
+    Route::post('/employees/other-employee-info/photo', [EmployeeController::class, 'uploadOtherEmployeePhoto'])->name('employees.other-employee-info.photo')->middleware('role:admin,hr');
+    Route::post('/employees/other-employee-info/photo/clear', [EmployeeController::class, 'clearOtherEmployeePhoto'])->name('employees.other-employee-info.photo.clear')->middleware('role:admin,hr');
+    Route::get('/employees/prev-emp-oth', [EmployeeController::class, 'prevEmpOth'])->name('employees.prev-emp-oth')->middleware('role:admin,hr');
+    Route::post('/employees/prev-emp-oth', [EmployeeController::class, 'savePrevEmpOth'])->name('employees.prev-emp-oth.save')->middleware('role:admin,hr');
     Route::resource('employees', EmployeeController::class);
     Route::get('/employees/{employee}/payroll', [EmployeeController::class, 'payroll'])->name('employees.payroll');
     
@@ -50,8 +70,144 @@ Route::middleware('auth')->group(function () {
     // Position routes
     Route::resource('positions', App\Http\Controllers\PositionController::class);
     
+    // Payroll routes
+    Route::resource('payrolls', PayrollController::class);
+    Route::post('/payrolls/{payroll}/process', [PayrollController::class, 'process'])->name('payrolls.process');
+    Route::get('/payrolls/reports/summary', [PayrollController::class, 'summary'])->name('payrolls.summary');
+    Route::get('/payrolls/reports/monthly', [PayrollController::class, 'monthlyReport'])->name('payrolls.monthly');
     
+    // Additional payroll processing routes
+    
+    Route::post('/payrolls/process-payments', [PayrollController::class, 'processPayments'])->name('payrolls.process-payments');
+    Route::post('/payrolls/bulk-approve', [PayrollController::class, 'bulkApprove'])->name('payrolls.bulk-approve');
+    Route::post('/payrolls/export-payroll', [PayrollController::class, 'exportPayroll'])->name('payrolls.export-payroll');
+    Route::post('/payrolls/generate-payroll', [PayrollController::class, 'generatePayroll'])->name('payrolls.generate-payroll');
+    Route::post('/payroll/generate', [\App\Http\Controllers\Web\PayrollController::class, 'generate'])->name('payrolls.generate');
+    Route::get('/ajax/payrolls/approved', [\App\Http\Controllers\Web\PayrollController::class, 'getApprovedPayrolls']);
+    Route::post('/ajax/payrolls/process-payments', [\App\Http\Controllers\Web\PayrollController::class, 'processPaymentsApi']);
+    Route::get('/ajax/payrolls/status-count', [PayrollController::class, 'getPayrollStatusCount']);
+    Route::post('/ajax/payrolls/bulk-approve', [PayrollController::class, 'ajaxBulkApprove']);
+    Route::get('/ajax/payrolls/payment-status', [PayrollController::class, 'checkPaidStatus']);
+    Route::get('/ajax/payrolls/pending', [\App\Http\Controllers\Web\PayrollController::class, 'getPendingPayrolls']);
+    Route::post('/ajax/payrolls/approve-all', [\App\Http\Controllers\Web\PayrollController::class, 'approveAllViaAjax']);
+    Route::post('/payroll/complete-workflow', [\App\Http\Controllers\Web\PayrollController::class, 'completePayrollWorkflow'])->name('payrolls.complete-workflow');
+    Route::post('/payroll/generate', [PayrollController::class, 'generate'])->name('payrolls.generate');
+    Route::post('/payrolls/generate-payslips', [PayrollController::class, 'generatePayslips'])->name('payrolls.generate-payslips');
+    Route::get('/payrolls/{payroll}/download-payslip', [PayrollController::class, 'downloadPayslip'])->name('payrolls.download-payslip');
+    Route::get('/payrolls/download-all-payslips', [PayrollController::class, 'downloadAllPayslips'])->name('payrolls.download-all-payslips');
+    Route::post('/payrolls/{payroll}/generate-payslip', [PayrollController::class, 'generateSinglePayslip'])->name('payrolls.generate-payslip');
+    Route::get('/payrolls/download-all-payslips', [PayrollController::class, 'downloadAllPayslips'])->name('payrolls.download-all-payslips');
+    Route::post('/payrolls/mark-as-paid', [PayrollController::class, 'markAsPaid'])->name('payrolls.mark-as-paid');
+    Route::post('/payrolls/approve-selected', [PayrollController::class, 'approveSelected'])->name('payrolls.approve-selected');
+    Route::post('/payrolls/process-selected-payments', [PayrollController::class, 'processSelectedPayments'])->name('payrolls.process-selected-payments');
+    Route::post('/payrolls/export-detailed', [PayrollController::class, 'exportDetailed'])->name('payrolls.export-detailed');
+    Route::post('/payrolls/mark-as-paid', [PayrollController::class, 'markAsPaid'])
+    ->name('payrolls.mark-as-paid')
+    ->middleware('auth');
+    Route::post('/payrolls/export-with-calculations', [PayrollController::class, 'exportWithCalculations'])
+    ->name('payrolls.export-with-calculations');
+    Route::post('/payrolls/export-with-calculations', [PayrollController::class, 'exportWithCalculations'])->name('payrolls.export-with-calculations');
+    Route::post('/payrolls/export-with-calculations', [PayrollController::class, 'exportWithCalculations'])
+    ->name('payrolls.export-with-calculations')
+    ->middleware('auth');
+    Route::post('/payrolls/simple-export', [PayrollController::class, 'simpleExport'])->name('payrolls.simple-export');
 
+Route::post('/payrolls/generate-payslips', [PayrollController::class, 'generatePayslips'])
+    ->name('payrolls.generate-payslips')
+    ->middleware('auth');
+
+Route::get('/payrolls/download-all-payslips', [PayrollController::class, 'downloadAllPayslips'])
+    ->name('payrolls.download-all-payslips')
+    ->middleware('auth');
+
+Route::post('/payrolls/mark-as-paid', [PayrollController::class, 'markAsPaid'])
+    ->name('payrolls.mark-as-paid')
+    ->middleware('auth');
+Route::get('/debug-payroll-match', [PayrollController::class, 'debugPayrollMatching']);
+
+Route::post('/payroll/{payroll}/approve', [PayrollController::class, 'approvePayroll'])->name('payroll.approve');
+Route::post('/payroll/{payroll}/reject', [PayrollController::class, 'rejectPayroll'])->name('payroll.reject');
+Route::get('/payroll/{payroll}/download-payslip', [PayrollController::class, 'downloadViewPayslip'])->name('payroll.download-payslip');
+
+
+    // Payroll route aliases for consistency
+    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+    Route::get('/payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
+    
+    // Debug route for payroll functions
+    Route::get('/test-payroll-functions', function() {
+        $service = app(\App\Services\PayrollGenerationService::class);
+        
+        // Test components
+        $paymentModelExists = class_exists(\App\Models\Payment::class);
+        $dompdfExists = class_exists(\Barryvdh\DomPDF\Facade\Pdf::class);
+        $payrolls = \App\Models\Payroll::where('status', 'approved')->take(2)->get();
+        $storageWritable = is_writable(storage_path());
+        $payslipColumnExists = \Illuminate\Support\Facades\Schema::hasColumn('payrolls', 'payslip_file');
+        
+        return [
+            'payment_model_exists' => $paymentModelExists,
+            'dompdf_exists' => $dompdfExists,
+            'storage_writable' => $storageWritable,
+            'payslip_column_exists' => $payslipColumnExists,
+            'approved_payrolls_count' => $payrolls->count(),
+            'payrolls' => $payrolls->toArray()
+        ];
+    });
+
+    // Add this to routes/web.php
+Route::get('/debug-payroll-dates', function() {
+    $payrolls = \App\Models\Payroll::select('id', 'employee_id', 'pay_period_start', 'pay_period_end', 'status', 'created_at')
+        ->orderBy('pay_period_start', 'desc')
+        ->limit(20)
+        ->get();
+    
+    return response()->json([
+        'total_payrolls' => \App\Models\Payroll::count(),
+        'pending_count' => \App\Models\Payroll::where('status', 'pending')->count(),
+        'approved_count' => \App\Models\Payroll::where('status', 'approved')->count(),
+        'recent_payrolls' => $payrolls,
+        'unique_periods' => \App\Models\Payroll::select('pay_period_start', 'pay_period_end')
+            ->distinct()
+            ->orderBy('pay_period_start', 'desc')
+            ->get()
+    ]);
+});
+
+// In routes/web.php
+Route::get('/debug-current-payrolls', function() {
+    $allPayrolls = \App\Models\Payroll::select(
+        'id', 
+        'employee_id', 
+        'pay_period_start', 
+        'pay_period_end', 
+        'status',
+        'created_at'
+    )
+    ->with(['employee:id,employee_id,first_name,last_name'])
+    ->orderBy('pay_period_start', 'desc')
+    ->limit(50)
+    ->get();
+    
+    $uniquePeriods = \App\Models\Payroll::select('pay_period_start', 'pay_period_end')
+        ->selectRaw('COUNT(*) as count')
+        ->groupBy('pay_period_start', 'pay_period_end')
+        ->orderBy('pay_period_start', 'desc')
+        ->get();
+    
+    return response()->json([
+        'total_payrolls' => \App\Models\Payroll::count(),
+        'status_counts' => [
+            'pending' => \App\Models\Payroll::where('status', 'pending')->count(),
+            'approved' => \App\Models\Payroll::where('status', 'approved')->count(),
+            'paid' => \App\Models\Payroll::where('status', 'paid')->count(),
+        ],
+        'recent_payrolls' => $allPayrolls,
+        'unique_periods' => $uniquePeriods,
+        'database_date_format' => 'Check if dates are YYYY-MM-DD or include time'
+    ]);
+});
+    
     
     // Schedule Management V2 routes
     Route::prefix('schedule-v2')->name('schedule-v2.')->group(function () {
@@ -84,18 +240,62 @@ Route::middleware('auth')->group(function () {
         Route::delete('/sessions/{session}', [App\Http\Controllers\Web\HrController::class, 'terminateSession'])->name('sessions.terminate');
         Route::delete('/sessions', [App\Http\Controllers\Web\HrController::class, 'terminateAllOtherSessions'])->name('sessions.terminate-all');
         Route::post('/track-session', [App\Http\Controllers\Web\HrController::class, 'trackLoginSession'])->name('track-session');
+        
+        // Contact HR routes
+        Route::get('/contact', [App\Http\Controllers\Web\HrContactController::class, 'index'])->name('contact.index');
+        Route::post('/contact', [App\Http\Controllers\Web\HrContactController::class, 'store'])->name('contact.store');
+        Route::get('/contact/{hrContact}', [App\Http\Controllers\Web\HrContactController::class, 'show'])->name('contact.show');
+        Route::post('/contact/{hrContact}/respond', [App\Http\Controllers\Web\HrContactController::class, 'respond'])->name('contact.respond');
+        Route::get('/contacts/admin', [App\Http\Controllers\Web\HrContactController::class, 'admin'])->name('contacts.admin');
+        Route::get('/messages', [App\Http\Controllers\Web\HrContactController::class, 'messages'])->name('messages.index');
+        Route::get('/inbox/quick', [App\Http\Controllers\Web\HrContactController::class, 'quickInbox'])->name('inbox.quick');
+        
+        // Help & Support routes
+        Route::get('/help-support', [App\Http\Controllers\Web\HelpSupportController::class, 'index'])->name('help-support');
+        Route::post('/help-support/ticket', [App\Http\Controllers\Web\HelpSupportController::class, 'storeTicket'])->name('help-support-ticket-store');
+        
+        // Employee Personnel Files routes
+        Route::get('/employee-personnel-files', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'index'])->name('employee-personnel-files');
+        
+        // View file route for modal (must be before other routes to avoid conflicts)
+        Route::get('/employee-personnel-files/view/{employeeId}/{category}/{filename}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'viewFile'])->name('employee-personnel-files.view');
+        
+        Route::get('/employee-personnel-files/{employeeId}/hiring', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showHiring'])->name('employee-personnel-files.hiring');
+        Route::get('/employee-personnel-files/{employeeId}/employment', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showEmployment'])->name('employee-personnel-files.employment');
+        Route::get('/employee-personnel-files/{employeeId}/performance', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showPerformance'])->name('employee-personnel-files.performance');
+        Route::get('/employee-personnel-files/{employeeId}/offboarding', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showOffboarding'])->name('employee-personnel-files.offboarding');
+        Route::get('/employee-personnel-files/{employeeId}/confidential', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showConfidential'])->name('employee-personnel-files.confidential');
+        
+        // Upload routes
+        Route::post('/employee-personnel-files/{employeeId}/upload/{category}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'uploadFile'])->name('employee-personnel-files.upload');
+        
+        // Update file route
+        Route::post('/employee-personnel-files/{employeeId}/update/{category}/{oldFilename}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'updateFile'])->name('employee-personnel-files.update');
+        
+        // Delete file route
+        Route::delete('/employee-personnel-files/{employeeId}/{category}/{filename}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'deleteFile'])->name('employee-personnel-files.delete');
+        
+        // New Employee Screen Route
+        Route::get('/reports/new-employees', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showNewEmployees'])->name('reports.new-employees');
+        
+        // End of Contracts Screen Route
+        Route::get('/reports/end-of-contracts', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'showEndOfContracts'])->name('reports.end-of-contracts');
+        
+        // End of Contracts AJAX Actions
+        Route::post('/reports/end-of-contracts/send-reminder/{employeeId}', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'sendReminder'])->name('reports.end-of-contracts.send-reminder');
+        Route::post('/reports/end-of-contracts/send-reminders', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'sendReminders'])->name('reports.end-of-contracts.send-reminders');
+        Route::post('/reports/end-of-contracts/generate-renewal-letters', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'generateRenewalLetters'])->name('reports.end-of-contracts.generate-renewal-letters');
+        Route::post('/reports/end-of-contracts/schedule-reminders', [App\Http\Controllers\Web\EmployeePersonnelFilesController::class, 'scheduleReminders'])->name('reports.end-of-contracts.schedule-reminders');
+        
+        // Employee Offences Routes
+        Route::get('/reports/employee-offences', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'index'])->name('reports.employee-offences');
+        Route::get('/reports/employee-offences/{id}', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'show'])->name('reports.employee-offences.show');
+        Route::post('/reports/employee-offences', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'store'])->name('reports.employee-offences.store');
+        Route::put('/reports/employee-offences/{id}', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'update'])->name('reports.employee-offences.update');
+        Route::post('/reports/employee-offences/{id}/status', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'updateStatus'])->name('reports.employee-offences.update-status');
+        Route::delete('/reports/employee-offences/{id}', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'destroy'])->name('reports.employee-offences.destroy');
+        Route::get('/reports/employee-offences/employee/{employeeId}', [App\Http\Controllers\Web\EmployeeOffencesController::class, 'getByEmployee'])->name('reports.employee-offences.by-employee');
     });
-    
-    // Payroll routes
-    Route::resource('payrolls', PayrollController::class);
-    Route::post('/payrolls/{payroll}/process', [PayrollController::class, 'process'])->name('payrolls.process');
-    Route::get('/payrolls/reports/summary', [PayrollController::class, 'summary'])->name('payrolls.summary');
-    Route::get('/payrolls/reports/monthly', [PayrollController::class, 'monthlyReport'])->name('payrolls.monthly');
-    
-    // Payroll route aliases for consistency
-    Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
-
-    Route::get('/payroll/{payroll}', [PayrollController::class, 'show'])->name('payroll.show');
     
     // Attendance routes
     Route::prefix('attendance')->name('attendance.')->group(function () {
@@ -122,7 +322,11 @@ Route::middleware('auth')->group(function () {
         
         // General attendance routes
         Route::get('/daily', [App\Http\Controllers\Web\AttendanceController::class, 'daily'])->name('daily');
+        Route::get('/daily/export/{format}', [App\Http\Controllers\Web\AttendanceController::class, 'exportDaily'])->name('daily.export');
         Route::get('/timekeeping', [App\Http\Controllers\Web\AttendanceController::class, 'timekeeping'])->name('timekeeping');
+        Route::get('/timekeeping/export/{format}', [App\Http\Controllers\Web\AttendanceController::class, 'exportTimekeeping'])->name('timekeeping.export');
+        Route::get('/reports', [App\Http\Controllers\Web\AttendanceController::class, 'reports'])->name('reports');
+        Route::get('/reports/export/{format}', [App\Http\Controllers\Web\AttendanceController::class, 'exportReports'])->name('reports.export');
         Route::get('/statistics', [App\Http\Controllers\Web\AttendanceController::class, 'getStatistics'])->name('statistics');
         
         // Import DTR routes
@@ -133,7 +337,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/temp-timekeeping', [App\Http\Controllers\Web\AttendanceController::class, 'tempTimekeeping'])->name('temp-timekeeping');
         Route::post('/temp-timekeeping/approve', [App\Http\Controllers\Web\AttendanceController::class, 'approveTempTimekeeping'])->name('temp-timekeeping.approve');
         
-            // Attendance record management routes
+        // Attendance record management routes
         Route::get('/create-record', [App\Http\Controllers\Web\AttendanceController::class, 'createRecord'])->name('create-record');
         Route::post('/store-record', [App\Http\Controllers\Web\AttendanceController::class, 'storeRecord'])->name('store-record');
         Route::get('/edit-record/{id}', [App\Http\Controllers\Web\AttendanceController::class, 'editRecord'])->name('edit-record');
@@ -163,6 +367,7 @@ Route::middleware('auth')->group(function () {
         
         // Overtime routes
         Route::get('/overtime', [App\Http\Controllers\Web\OvertimeController::class, 'index'])->name('overtime');
+        Route::get('/overtime/export/{format}', [App\Http\Controllers\Web\OvertimeController::class, 'exportOvertime'])->name('overtime.export');
         Route::post('/overtime', [App\Http\Controllers\Web\OvertimeController::class, 'store'])->name('overtime.store');
         Route::put('/overtime/{id}/status', [App\Http\Controllers\Web\OvertimeController::class, 'updateStatus'])->name('overtime.update-status');
         Route::delete('/overtime/{id}/cancel', [App\Http\Controllers\Web\OvertimeController::class, 'cancel'])->name('overtime.cancel');
@@ -170,20 +375,22 @@ Route::middleware('auth')->group(function () {
         
         // Leave management routes
         Route::get('/leave-management', [App\Http\Controllers\Web\LeaveController::class, 'index'])->name('leave-management');
+        Route::get('/leave-management/export/{format}', [App\Http\Controllers\Web\LeaveController::class, 'exportLeave'])->name('leave-management.export');
+        Route::get('/leave-management/create', [App\Http\Controllers\Web\LeaveController::class, 'create'])->name('leave-management.create');
         Route::post('/leave-management', [App\Http\Controllers\Web\LeaveController::class, 'store'])->name('leave-management.store');
         Route::put('/leave-management/{id}/status', [App\Http\Controllers\Web\LeaveController::class, 'updateStatus'])->name('leave-management.update-status');
         Route::delete('/leave-management/{id}/cancel', [App\Http\Controllers\Web\LeaveController::class, 'cancel'])->name('leave-management.cancel');
         Route::get('/leave-management/balance', [App\Http\Controllers\Web\LeaveController::class, 'getLeaveBalance'])->name('leave-management.balance');
+        Route::post('/leave-management/balance', [App\Http\Controllers\Web\LeaveController::class, 'storeBalance'])->name('leave-management.balance.store');
+        Route::put('/leave-management/balance/{id}', [App\Http\Controllers\Web\LeaveController::class, 'updateBalance'])->name('leave-management.balance.update');
         Route::get('/leave-management/statistics', [App\Http\Controllers\Web\LeaveController::class, 'getStatistics'])->name('leave-management.statistics');
         
         // Admin/HR only routes
         Route::middleware(['role:admin,hr'])->group(function () {
-            Route::get('/reports', function () {
-                return view('attendance.reports', ['user' => auth()->user()]);
-            })->name('reports');
+            Route::get('/reports', [App\Http\Controllers\Web\AttendanceController::class, 'reports'])->name('reports');
             
             Route::get('/settings', function () {
-                return view('attendance.settings', ['user' => auth()->user()]);
+                return view('attendance.settings');
             })->name('settings');
         });
     });
@@ -192,4 +399,42 @@ Route::middleware('auth')->group(function () {
     Route::resource('tax-brackets', App\Http\Controllers\Web\TaxBracketController::class);
     Route::post('/tax-brackets/calculate', [App\Http\Controllers\Web\TaxBracketController::class, 'calculateTax'])->name('tax-brackets.calculate');
     Route::post('/tax-brackets/philippine', [App\Http\Controllers\Web\TaxBracketController::class, 'createPhilippineBrackets'])->name('tax-brackets.philippine');
+
+    // Add these routes to your web.php file
+
+    // Document Management routes
+    Route::middleware(['auth'])->group(function () {
+    // Documents routes
+    Route::get('/documents', [DocumentController::class, 'index'])->name('documents.index');
+    Route::post('/documents/switch-company', [DocumentController::class, 'switchCompany'])->name('documents.switch-company');
+    Route::get('/documents/export', [DocumentController::class, 'export'])->name('documents.export');
+    Route::get('/documents/employee/{id}/export', [DocumentController::class, 'exportEmployee'])->name('documents.employee.export');
+    
+    // Employee details for modal
+    Route::get('/employees/{id}/details', [DocumentController::class, 'getEmployeeDetails']);
+    
+    // Employee documents page
+    Route::get('/employees/{id}/documents', [EmployeeController::class, 'documents'])->name('employees.documents');
+});
+
+    // Employee Info routes
+    Route::middleware(['auth'])->group(function () {
+        Route::get('/employee-info', [EmployeeInfoController::class, 'index'])->name('employee-info.index');
+        Route::get('/employee-info/{employeeId}/documents', [EmployeeInfoController::class, 'getEmployeeDocuments'])->name('employee-info.documents');
+        Route::get('/employee-info/document/{documentId}/download', [EmployeeInfoController::class, 'downloadDocument'])->name('employee-info.document.download');
+        Route::delete('/employee-info/document/{documentId}', [EmployeeInfoController::class, 'deleteDocument'])->name('employee-info.document.delete');
+    });
+
+// Employee Dashboard Routes
+Route::middleware(['auth', 'verified'])->prefix('employee')->name('employee.')->group(function () {
+    // Dashboard
+    Route::get('/dashboard', [EmployeeDashboardController::class, 'index'])->name('dashboard');
+    
+    // Payslip downloads - MAKE SURE THESE ROUTES ARE DEFINED
+    Route::get('/payslip/download/{payrollId}', [EmployeeDashboardController::class, 'downloadPayslip'])->name('payslip.download');
+    Route::get('/test-download/{payrollId}', [EmployeeDashboardController::class, 'testDownload'])->name('test.download');
+    
+    // Dashboard data
+    Route::get('/dashboard/data', [EmployeeDashboardController::class, 'getDashboardData'])->name('dashboard.data');
+});
 });

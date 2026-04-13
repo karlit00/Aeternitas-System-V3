@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 *.log
 .DS_Store
 .env.backup
@@ -23,3 +24,12 @@ Homestead.yaml
 Thumbs.db
 .env
 /dtrexample
+TASKS-EJHAY.md
+=======
+node_modules/
+backend/vendor/
+backend/node_modules/
+backend/storage/logs/
+backend/bootstrap/cache/
+backend/.env
+>>>>>>> 6f17595582846178fab1e2c3e10b3df5416f8ad4
